@@ -1,0 +1,7 @@
+HD;Name;Flux;
+107418;	;2.96   ; Alycia
+108522;	;1.68   ; Alycia
+109272; ;1.42   ; Alycia
+104979;	;6.1	; Alycia
+109742;	;4.2	; Alycia
+108381;	;6.2	; Alycia

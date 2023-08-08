@@ -1,0 +1,2 @@
+gcc -g -Wall -fPIC lbti_masterlog.c -o lbti_masterlog -lcfitsio
+gcc -dynamiclib -I/opt/local/idl lbti_masterlog.c -o libmasterlog.dylib -lcfitsio

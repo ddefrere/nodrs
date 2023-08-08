@@ -1,0 +1,11 @@
+PRO END_PS
+
+IF !version.os_family EQ 'unix' THEN SET_PLOT,'X' ELSE SET_PLOT,'WIN'
+
+!P.CHARSIZE=1
+!P.CHARTHICK=1
+!X.THICK=0
+!Y.THICK=0
+!P.THICK=0
+
+END
