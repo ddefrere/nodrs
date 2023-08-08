@@ -413,9 +413,10 @@ IF KEYWORD_SET(PLOT) AND n_img GT 1 THEN BEGIN
       ENDELSE
       tt = SQRT(tip^2+tlt^2) 
       plotname = plot_path + drs.date_obs + '_NOD' + STRING(hdr_in.header.nod_id, FORMAT='(I03)')
-      IF MAX(tip) NE 0 THEN PLOTALL, time, REFORM(tip), 0, NAME=plotname, TAG='TIP' + STRING(ib, FORMAT='(I0)'), XTITLE='Elapsed time [s]', YTITLE='Tip [mas]', TITLE=' ', /BOLD, /EPS
-      IF MAX(tlt) NE 0 THEN PLOTALL, time, REFORM(tip), 0, NAME=plotname, TAG='TLT' + STRING(ib, FORMAT='(I0)'), XTITLE='Elapsed time [s]', YTITLE='Tilt [mas]', TITLE=' ', /BOLD, /EPS
-      IF MAX(tt)  NE 0 THEN PLOTALL, time, REFORM(tt),  0, NAME=plotname, TAG='TT'  + STRING(ib, FORMAT='(I0)'), XTITLE='Elapsed time [s]', YTITLE='Tip/tilt [mas]', TITLE=' ', /BOLD, /EPS
+      IF N_ELEMENTS(time) LE 10 THEN no_histo = 1
+      IF MAX(tip) NE 0 THEN PLOTALL, time, REFORM(tip), 0, NAME=plotname, TAG='TIP' + STRING(ib, FORMAT='(I0)'), XTITLE='Elapsed time [s]', YTITLE='Tip [mas]', TITLE=' ', NO_HISTO=no_histo, /BOLD, /EPS
+      IF MAX(tlt) NE 0 THEN PLOTALL, time, REFORM(tip), 0, NAME=plotname, TAG='TLT' + STRING(ib, FORMAT='(I0)'), XTITLE='Elapsed time [s]', YTITLE='Tilt [mas]', TITLE=' ', NO_HISTO=no_histo, /BOLD, /EPS
+      IF MAX(tt)  NE 0 THEN PLOTALL, time, REFORM(tt),  0, NAME=plotname, TAG='TT'  + STRING(ib, FORMAT='(I0)'), XTITLE='Elapsed time [s]', YTITLE='Tip/tilt [mas]', TITLE=' ', NO_HISTO=no_histo, /BOLD, /EPS
   ENDFOR
 ENDIF
 
@@ -459,11 +460,12 @@ IF NOT KEYWORD_SET(NO_SAVE) AND KEYWORD_SET(SAVE_ON) THEN BEGIN
       ENDIF ELSE ob_save = ob_all[i_b]
       ; Total number of rejected frames
       hdr_in.header.n_rej = n_rej + (n_img-n_keep)
+      ; Save flux in structure
+      flx_out = {APER_RAD: aper_rad, BCK_IRAD: bck_irad, BCK_ORAD: bck_orad, NSKY: n_sky, BCKG_MEAS: REFORM(bck_flx[idx_keep,i_b,*]), BCKG_ERR: REFORM(bck_err[idx_keep,i_b,*]), FLX_TOT:REFORM(str_flx[idx_keep,i_b,*]), FLX_ERR:REFORM(str_err[idx_keep,i_b,*]),$
+                BCKG_MEAS2: REFORM(bck_flx2[idx_keep,i_b,*]) , BCKG_ERR2: REFORM(bck_err2[idx_keep,i_b,*]), FLX_TOT2: REFORM(str_flx2[idx_keep,i_b,*]), FLX_ERR2: REFORM(str_err2[idx_keep,i_b,*])}
       ; Save data if requested
-      LBTI_SAVEL1IMG, REFORM(img_sav[*,*,idx_keep,i_b]), hdr_in.header, data_in[idx_keep], FILE_ID=ob_save
-      LBTI_SAVEL1FLX, {APER_RAD: aper_rad, BCK_IRAD: bck_irad, BCK_ORAD: bck_orad, NSKY: n_sky, BCKG_MEAS: REFORM(bck_flx[idx_keep,i_b,*]), BCKG_ERR: REFORM(bck_err[idx_keep,i_b,*]), FLX_TOT:REFORM(str_flx[idx_keep,i_b,*]), FLX_ERR:REFORM(str_err[idx_keep,i_b,*]),$
-                      BCKG_MEAS2: REFORM(bck_flx2[idx_keep,i_b,*]) , BCKG_ERR2: REFORM(bck_err2[idx_keep,i_b,*]), FLX_TOT2: REFORM(str_flx2[idx_keep,i_b,*]), FLX_ERR2: REFORM(str_err2[idx_keep,i_b,*])}, $
-                      hdr_in.header, data_in[idx_keep], FILE_ID=ob_save
+      LBTI_SAVEL1IMG, REFORM(img_sav[*,*,idx_keep,i_b]), hdr_in.header, data_in[idx_keep], flx_out, FILE_ID=ob_save
+      LBTI_SAVEL1FLX, flx_out, hdr_in.header, data_in[idx_keep], FILE_ID=ob_save
       ; Save idx for later
       IF i_b EQ 0 THEN idx_keep1 = idx_keep
       IF i_b EQ 1 THEN idx_keep2 = idx_keep

@@ -32,8 +32,9 @@
 ;   Version 2.3, 24-DEC-2015, DD: Added /NO_COPY to save memory
 ;   Version 2.4, 02-JUL-2016, DD: Added central value
 ;   Version 2.5, 04-APR-2017, DD: Added more target information to output header
+;   Version 2.6, 26-FEB-2019, DD: Added flx_out
 
-PRO LBTI_SAVEL1IMG, img_in, hdr_in, data_in, FILE_ID=file_id, SPLIT=split
+PRO LBTI_SAVEL1IMG, img_in, hdr_in, data_in, flx_out, FILE_ID=file_id, SPLIT=split
 
 ; Define operational parameters
 COMMON GLOBAL, prm, cnf, wav, tgt, pth, drs, log
@@ -271,7 +272,7 @@ ENDIF
 FXBHMAKE, hdr, n_row, /INIT, EXTVER=1, 'DATA_SERIES', 'parameters that change frame by frame'
 
 ; Init column number
-n_col = 12
+n_col = 13
 col   = LINDGEN(n_col)+1L
 
 ; Fill extension header with column names
@@ -287,11 +288,12 @@ FXBADDCOL, 9L, hdr, chp_id[0],             'CHP_ID',    'Chop identification num
 FXBADDCOL, 10L, hdr, xcen[0],              'XCEN',      'X position of the star'
 FXBADDCOL, 11L, hdr, ycen[0],              'YCEN',      'Y position of the star'
 FXBADDCOL, 12L, hdr, slope[0],             'SLOPE',     'Slope of the fitted Moffat profile'
+FXBADDCOL, 13L, hdr, flx_out.bckg_err[0],  'BCK_ERR',   'Background error'
 
 ; Write extension header to FITS file
 FXBCREATE, unit, outfile, hdr
 FXBWRITM,  unit, col, data_in.file_id, data_in.mjd_obs, data_in.lbt_utc, data_in.lbt_lst, data_in.lbt_alt, data_in.lbt_az, data_in.lbt_para, $
-                      nod_id, chp_id, xcen, ycen, slope
+                      nod_id, chp_id, xcen, ycen, slope, flx_out.bckg_err
 FXBFINISH, unit
 
 ; Copy files if FILE_ID is an array

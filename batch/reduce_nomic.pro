@@ -46,7 +46,13 @@ plot     = 1         ; Plot data on screen if larger than 1
 
 ; Config files
 cfg_file = 'nomic.cfg'
-  
+
+; HP Boo data
+IF date EQ '130524' THEN BEGIN
+  data_idx = [0,848]            ; [190,199]  ; nod1
+  nod_idx  = [[0,29],[30,94],[95,159],[160,224],[225,289],[290,354],[355,419],[420,484],[485,549],[550,614],[680,744],[745,829],[830,848]]   ; [300,309]
+ENDIF  
+
 ; Perform data reduction   
 LBTI_DRS, date, cfg_file, $
           BAD_IDX=bad_idx, BCKG_IDX=bckg_idx, DARK_IDX=dark_idx, DATA_IDX=data_idx,  FLAT_IDX=flat_idx, NOD_IDX=nod_idx, OB_IDX=ob_idx, $   ; Date to be reduced and index of files

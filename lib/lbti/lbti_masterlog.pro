@@ -49,6 +49,8 @@
 ;   Version 3.7,  23-MAY-2017, DD: Now compute central value over ROI
 ;   Version 3.8,  23-NOV-2017, DD: Corrected minor bug for large number of coadds
 ;   Version 3.9,  16-APR-2018, DD: Improved robustness against bad header inputs
+;   Version 4.0,  03-MAR-2019, DD: Now handle LMIRCAM_DETECTOR as instrument name
+;   Version 4.1,  31-JAN-2020, DD: Better handle header keywords which are not valid numbers
 
 PRO LBTI_MASTERLOG, data_path, APPEND=append, IDL=idl, ALT_OUT_DIR=alt_out_dir
   
@@ -164,6 +166,7 @@ PRO LBTI_MASTERLOG, data_path, APPEND=append, IDL=idl, ALT_OUT_DIR=alt_out_dir
       
       ; Compute central value over ROI
       instrum  = STRUPCASE(STRTRIM(SXPAR(header, 'INSTRUME'), 2))
+      IF instrum EQ 'LMIRCAM_DETECTOR' THEN instrum = 'LMIRCAM'
       subsectm = FXPAR(header, 'SUBSECTM')
       IF !err NE -1 THEN roi = LBTI_ROI(subsectm, INSTRUM=instrum) ELSE roi = [0,0,N_ELEMENTS(img[*,0,0])-1,N_ELEMENTS(img[0,*,0])-1]
       IF MAX(roi) EQ 0 THEN roi =  [0,0,N_ELEMENTS(img[*,0,0])-1,N_ELEMENTS(img[0,*,0])-1]
@@ -180,14 +183,14 @@ PRO LBTI_MASTERLOG, data_path, APPEND=append, IDL=idl, ALT_OUT_DIR=alt_out_dir
       pabandw  = FIX(SXPAR(header, 'PABANDWI', /NOCONTINUE))
       pactcdly = FIX(SXPAR(header, 'PACTCDLY', /NOCONTINUE))
       lbt_alt  = DOUBLE(SXPAR(header, 'LBT_ALT', /NOCONTINUE) < 90)    ; Failsafe in case 999
-      lbt_lxao = FLOAT(SXPAR(header, 'LOFFSETX', /NOCONTINUE)) 
-      lbt_lyao = FLOAT(SXPAR(header, 'LOFFSETY', /NOCONTINUE)) 
-      lbt_rxao = FLOAT(SXPAR(header, 'ROFFSETX', /NOCONTINUE))  
-      lbt_ryao = FLOAT(SXPAR(header, 'ROFFSETY', /NOCONTINUE)) 
-      lbt_lxos = FLOAT(SXPAR(header, 'LBT_LXOS', /NOCONTINUE))
-      lbt_lyos = FLOAT(SXPAR(header, 'LBT_LYOS', /NOCONTINUE))
-      lbt_rxos = FLOAT(SXPAR(header, 'LBT_RXOS', /NOCONTINUE))
-      lbt_ryos = FLOAT(SXPAR(header, 'LBT_RYOS', /NOCONTINUE))
+      lbt_lxao = SXPAR(header, 'LOFFSETX', /NOCONTINUE) & IF VALID_NUM(lbt_lxao) THEN lbt_lxao = FLOAT(lbt_lxao) ELSE lbt_lxao = -999
+      lbt_lyao = SXPAR(header, 'LOFFSETY', /NOCONTINUE) & IF VALID_NUM(lbt_lyao) THEN lbt_lyao = FLOAT(lbt_lyao) ELSE lbt_lyao = -999 
+      lbt_rxao = SXPAR(header, 'ROFFSETX', /NOCONTINUE) & IF VALID_NUM(lbt_rxao) THEN lbt_rxao = FLOAT(lbt_rxao) ELSE lbt_rxao = -999  
+      lbt_ryao = SXPAR(header, 'ROFFSETY', /NOCONTINUE) & IF VALID_NUM(lbt_ryao) THEN lbt_ryao = FLOAT(lbt_ryao) ELSE lbt_ryao = -999 
+      lbt_lxos = SXPAR(header, 'LBT_LXOS', /NOCONTINUE) & IF VALID_NUM(lbt_lxos) THEN lbt_lxos = FLOAT(lbt_lxos) ELSE lbt_lxos = -999
+      lbt_lyos = SXPAR(header, 'LBT_LYOS', /NOCONTINUE) & IF VALID_NUM(lbt_lyos) THEN lbt_lyos = FLOAT(lbt_lyos) ELSE lbt_lyos = -999
+      lbt_rxos = SXPAR(header, 'LBT_RXOS', /NOCONTINUE) & IF VALID_NUM(lbt_rxos) THEN lbt_rxos = FLOAT(lbt_rxos) ELSE lbt_rxos = -999
+      lbt_ryos = SXPAR(header, 'LBT_RYOS', /NOCONTINUE) & IF VALID_NUM(lbt_ryos) THEN lbt_ryos = FLOAT(lbt_ryos) ELSE lbt_ryos = -999
       flag     = STRTRIM(STRING(SXPAR(header, 'FLAG', /NOCONTINUE)), 2)
       IF !err NE -1 THEN BEGIN
         CASE flag OF
@@ -267,8 +270,10 @@ PRO LBTI_MASTERLOG, data_path, APPEND=append, IDL=idl, ALT_OUT_DIR=alt_out_dir
         IF obstype NE 3 THEN BEGIN
           flag     = 'C' ; Assume frame closed by default
           ; LLoopOn and RLoopOn cannot be trusted, use also status
-          IF FIX(SXPAR(header, 'RLOOPON', /NOCONTINUE)) NE 0 OR STRCOMPRESS(SXPAR(header, 'RSTATUS', /NOCONTINUE), /REMOVE_ALL) EQ 'AORunning' THEN dloopon = 1 ELSE dloopon = 0 & IF !err EQ -1 THEN dloopon = 1  ; Assume loop is closed if not present
-          IF FIX(SXPAR(header, 'LLOOPON', /NOCONTINUE)) NE 0 OR STRCOMPRESS(SXPAR(header, 'LSTATUS', /NOCONTINUE), /REMOVE_ALL) EQ 'AORunning' THEN sloopon = 1 ELSE sloopon = 0 & IF !err EQ -1 THEN sloopon = 1  ; Assume loop is closed if not present
+          rloopon = SXPAR(header, 'RLOOPON', /NOCONTINUE) & IF VALID_NUM(rloopon) THEN rloopon = FIX(rloopon) ELSE rloopon = 0
+          IF rloopon NE 0 OR STRCOMPRESS(SXPAR(header, 'RSTATUS', /NOCONTINUE), /REMOVE_ALL) EQ 'AORunning' THEN dloopon = 1 ELSE dloopon = 0 & IF !err EQ -1 THEN dloopon = 1  ; Assume loop is closed if not present
+          lloopon = SXPAR(header, 'LLOOPON', /NOCONTINUE) & IF VALID_NUM(lloopon) THEN lloopon = FIX(lloopon) ELSE lloopon = 0
+          IF lloopon NE 0 OR STRCOMPRESS(SXPAR(header, 'LSTATUS', /NOCONTINUE), /REMOVE_ALL) EQ 'AORunning' THEN sloopon = 1 ELSE sloopon = 0 & IF !err EQ -1 THEN sloopon = 1  ; Assume loop is closed if not present
           pcclosed = FIX(SXPAR(header, 'PCCLOSED', /NOCONTINUE)) & IF !err EQ -1 THEN plc_status = 1 
           IF obstype EQ 0 THEN BEGIN
             IF sloopon NE 1 AND dloopon NE 1 THEN flag = 'O'  ; Open-loop frame

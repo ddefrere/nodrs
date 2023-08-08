@@ -69,7 +69,7 @@ IF drs.adi_mode EQ 0 THEN BEGIN
     img_psf = 0   ; just because it's used later with other options of the code
   ENDIF ELSE BEGIN
     IF KEYWORD_SET(verbose)  THEN PRINT, 'Now performing median subtraction'
-    IF KEYWORD_SET(MEDIAN) THEN RESISTANT_MEAN, img_in, 10, img_psf, DIMENSION=3, /SILENT  ;img_psf = MEDIAN(img_in, dim=3) 
+    IF KEYWORD_SET(MEDIAN) THEN img_psf = MEDIAN(img_in, dim=3)  ;RESISTANT_MEAN, img_in, 10, img_psf, DIMENSION=3, /SILENT  ;
   ENDELSE
    
   ; Image filter
@@ -83,8 +83,8 @@ IF drs.adi_mode EQ 0 THEN BEGIN
   ENDFOR
 
   ; Compute median of derotated image
-  ;img_med = MEDIAN(img_in, dim=3)
-  RESISTANT_MEAN, img_in, 10, img_med, DIMENSION=3, /SILENT
+  img_med = MEDIAN(img_in, dim=3, /DOUBLE)
+  ;RESISTANT_MEAN, img_in, 10, img_med, DIMENSION=3, /SILENT
   ;img_con = CONVOL_FFT(img_med, psf)
 
   ; Mask center (for coronagraphy or saturated images)
@@ -115,13 +115,13 @@ IF drs.adi_mode EQ 0 THEN BEGIN
    
   ; Now subtract PSF (or median)
   FOR i=0, n_img-1 DO BEGIN
-    img_in[0,0,i]-=ROT(img_psf,-paral[i],1.0,dim/2,dim/2,CUBIC=-0.5,/PIVOT)
+    img_in[0,0,i]=img_in[*,*,i] - ROT(img_psf,-paral[i],1.0,dim/2,dim/2,CUBIC=-0.5,/PIVOT)
     ;img_in[0,0,i]=BANDPASS_FILTER(img_in[*,*,i], 1/(4.*psf_fwhm), 1., butterworth=1)   
   ENDFOR
   
   ; Compute median of derotated image
-  ;img_med = MEDIAN(img_in, dim=3)
-  RESISTANT_MEAN, img_in, 10, img_med, DIMENSION=3, /SILENT
+  img_med = MEDIAN(img_in, dim=3, /DOUBLE)
+  ;RESISTANT_MEAN, img_in, 10, img_med, DIMENSION=3, /SILENT
   ;img_con = CONVOL_FFT(img_med, psf)
   
   ; Mask center (for coronagraphy or saturated images)

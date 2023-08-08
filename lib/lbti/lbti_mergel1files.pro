@@ -13,6 +13,7 @@
 ;   Version 1.0, 02-NOV-2013, by Denis Defrère, University of Arizona, ddefrere@email.arizona.edu (adapted from former routine 'remove_bck.pro')
 ;   Version 1.1, 04-APR-2015, DD: added keyword FILENAME
 ;   Version 1.2, 29-NOV-2015, DD: added wavelength to FILENAME
+;   Version 1.3, 27-FEB-2019, DD: added background error
 
 PRO LBTI_MERGEL1FILES, l1files, FILENAME=filename
 
@@ -38,8 +39,9 @@ FOR i_f = 1, n_files-1 DO BEGIN
   dat0     = [TEMPORARY(dat0),dat_tmp]
 ENDFOR
 
-; Add slope to data if not defined
-IF NOT TAG_EXIST(dat0, 'SLOPE') THEN struct_add_field, dat0, 'slope', FLTARR(N_ELEMENTS(dat0.mjd_obs))
+; Add slope and bck_err to data if not defined
+IF NOT TAG_EXIST(dat0, 'SLRMS') THEN struct_add_field, dat0, 'slrms', FLTARR(N_ELEMENTS(dat0.mjd_obs))
+IF NOT TAG_EXIST(dat0, 'BCK_ERR') THEN struct_add_field, dat0, 'bck_err', FLTARR(N_ELEMENTS(dat0.mjd_obs))
 
 ; Save file
 IF NOT KEYWORD_SET(filename) THEN filename = FILE_DIRNAME(l1files[0]) + '/' + date_obs + '_' + flag + '_' + objname + '_' + STRING(1D+6*wav, FORMAT='(I0)') + 'um'
@@ -53,7 +55,7 @@ FXWRITE, outfile, hdr
 FXBHMAKE, hdr, n_row, /INIT, EXTVER=1, 'DATA_SERIES', 'Frame to frame variable parameters'
 
 ; Init column number
-n_col = 12
+n_col = 13
 col   = LINDGEN(n_col)+1L
 
 ; Fill extension header with column names
@@ -68,11 +70,12 @@ FXBADDCOL, 8L, hdr, dat0[0].nod_id,     'NOD_ID',    'Nod identification number'
 FXBADDCOL, 9L, hdr, dat0[0].chp_id,     'CHP_ID',    'Chop identification number'
 FXBADDCOL, 10L, hdr, dat0[0].xcen,      'XCEN',      'X position of the star'
 FXBADDCOL, 11L, hdr, dat0[0].ycen,      'YCEN',      'Y position of the star'
-FXBADDCOL, 12L, hdr, dat0[0].slope,     'SLOPE',     'Slope of the fitted Moffat model'
+FXBADDCOL, 12L, hdr, dat0[0].slrms,     'SLOPE',     'Slope of the fitted Moffat model'
+FXBADDCOL, 13L, hdr, dat0[0].bck_err,   'BCK_ERR',   'Background error'
 
 ; Write extension header to FITS file
 FXBCREATE, unit, outfile, hdr
 FXBWRITM,  unit, col, dat0.mjd_obs, dat0.lbt_utc, dat0.lbt_lst, dat0.lbt_alt, dat0.lbt_az, dat0.lbt_para, dat0.file_id, $
-                      dat0.nod_id, dat0.chp_id, dat0.xcen, dat0.ycen, dat0.slope
+                      dat0.nod_id, dat0.chp_id, dat0.xcen, dat0.ycen, dat0.slrms, dat0.bck_err
 FXBFINISH, unit
 END

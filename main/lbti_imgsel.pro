@@ -16,6 +16,7 @@
 ; MODIFICATION HISTORY:
 ;   Version 1.0, 02-FEB-2015, by Denis Defrère, University of Arizona, ddefrere@email.arizona.edu (based on LBTI_MERGEL1IMG.pro)
 ;   Version 1.1, 23-APR-2015: DD, added background selection
+;   Version 1.2, 27-FEB-2019, DD: added background error
 
 PRO LBTI_IMGSEL, file, data_file, MEDIAN=median, INFO=info, PLOT=plot
 
@@ -113,6 +114,21 @@ IF drs.sig_slo THEN BEGIN
   PRINT, 'Number of rejected frames based on Moffat slope : ', n_img-n_slope
   n_img = n_slope
 ENDIF ELSE n_slope = 0
+
+; Keep only the lowest noise (use the same as sig_slope)
+IF drs.sig_slo THEN BEGIN
+  bck_err = data_in.bck_err
+  AVGSDV, bck_err, avg_err, rms_err
+  idx_bck = WHERE(bck_err LE (avg_err + drs.sig_slo*rms_err), n_bck)
+  IF n_bck NE n_img THEN BEGIN
+    img_in  = img_in[*,*,idx_bck]
+    data_in = data_in[idx_bck]
+  ENDIF
+  PRINT, 'Number of rejected frames based on background noise : ', n_img-n_bck
+  ;PLOT, bck_err
+  ;OPLOT, bck_err[idx_bck], LINESTYLE=1
+  n_img = n_bck
+ENDIF ELSE n_bck = 0
 
 ; Keep only the frames which provides the highest correlation (only work for synthetic PSF now)
 shft_x = INTARR(n_img)

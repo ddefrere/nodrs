@@ -44,6 +44,7 @@
 ;   Version 2.3,  26-NOV-2017, DD: Improved speed!
 ;   Version 2.4,  17-APR-2018, DD: Added a limit on the number of bad pixels
 ;   Version 2.5,  29-JUL-2018, DD: Now save BCK_AVG and BCK_RMS separately for each channel
+;   Version 2.6 , 27-FEB-2019, DD: added hard-coded offset for specific dates
 
 FUNCTION LBTI_IMGRED, img_all, hdr_all, IMG_BPM=img_bpm, IMG_DRK=img_drk, IMG_FLT=img_flt, HDR_DRK=hdr_drk, HDR_FLT=hdr_flt,$ ; path to data directories              
                       HDR_DATA=hdr_data, $                                                                                    ; Output keywords
@@ -125,10 +126,11 @@ FOR i_s=0, n_sci-1 DO BEGIN
     n_ychan = cnf.y_chan
     n_chan  = FIX(n_ypix/n_ychan)
     FOR ic = 0, n_chan-1 DO BEGIN
-      ; a. left aprt of NOMIC
+      ; a. left part of NOMIC
       mask = INTARR(n_xpix, n_ypix) ; init mask to 0                     
       mask[pix_off:n_xchan-1-pix_off,ic*n_ychan+pix_off:ic*n_ychan+n_ychan-1-pix_off] = 1 ; set everything further than pix_off from the edges to 1
-      mask[(0.5*(n_xchan-box_wdt)):(0.5*(n_xchan+box_wdt)),ic*n_ychan+(0.5*(n_ychan-box_wdt)):ic*n_ychan+(0.5*(n_ychan+box_wdt))] = 0 ; set the central box to 0
+      IF (hdr_all[0].date_obs NE '2013-10-24') THEN y_off = 0 ELSE y_off = 32  ; hard-coded offset for specific nights
+      mask[(0.5*(n_xchan-box_wdt)):(0.5*(n_xchan+box_wdt)),ic*n_ychan+(0.5*(n_ychan-box_wdt+y_off)):ic*n_ychan+(0.5*(n_ychan+box_wdt+y_off))] = 0 ; set the central box to 0
       idx = WHERE(mask EQ 1)
       med = MEDIAN(img_tmp[idx])
       rms = STDDEV(img_tmp[idx])

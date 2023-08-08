@@ -64,6 +64,7 @@
 ;   Version 5.1,  30-JAN-2017, DD: Added keyword SPDTHPOS (OPD dither position)
 ;   Version 5.2,  12-APR-2017, DD: added region of interest!
 ;   Version 5.3,  12-MAY-2017, DD: updated PCPLSP to PCPLSP1
+;   Version 5.4,  03-MAR-2019, DD: Now handle LMIRCAM_DETECTOR as instrument name
 
 FUNCTION LBTI_READL0, lbti_file, HDR_DATA=hdata, KEY_MAP=key_map, LMIR_FW1=lmir_fw1, LMIR_FW2=lmir_fw2, LMIR_FW3=lmir_fw3, LMIR_FW4=lmir_fw4, NOM_FW1=nom_fw1, NOM_FW2=nom_fw2, NO_DETECTOR=no_detector, NO_FILTER=no_filter, INFO=info
 
@@ -94,6 +95,7 @@ DEFINE_HDRDATA, hdata
 
 ; 3. Check data integrity
 hdata.instrum  = STRUPCASE(STRTRIM(FXPAR(header, 'INSTRUME', START=p1, PRECHECK=pre_check, POSTCHECK=post_check, /NOCONTINUE), 2))
+IF hdata.instrum EQ 'LMIRCAM_DETECTOR' THEN  hdata.instrum = 'LMIRCAM'
 hdata.acq_time = FXPAR(header, 'ACQTIME', START=p2, PRECHECK=pre_check, POSTCHECK=post_check, /NOCONTINUE) 
 IF hdata.instrum NE 'NOMIC' AND hdata.instrum NE 'LMIRCAM' AND hdata.instrum NE 'MIRAC' OR NOT FINITE(hdata.acq_time) THEN RETURN, 0
 
@@ -274,16 +276,29 @@ IF NOT KEYWORD_SET(KEY_MAP) THEN DEFINE_KEYMAP, key_map, p1, p2, p3, p4, p5, p6,
 ; If CDS, only keep the difference frame and adjust integration time
 ; OR keep both frames if the integration time is equal to the frame time
 ; If not CDS, subtract the reference pixels with routine LBTI_BIASSUBTRACT
-IF hdata.smplmode EQ 6 THEN BEGIN
-   frmtime = DOUBLE(FXPAR(header, 'FRMTIME', /NOCONTINUE))
-   dit_eff = hdata.int_time - frmtime
-   IF dit_eff NE 0 THEN BEGIN
-      img_in     = img_in[*,*,2]-img_in[*,*,1]
-      hdata.n_fr = 1
-      hdr_data[*].int_time = dit_eff
+IF hdata.smplmode EQ 6 OR hdata.n_fr GT 1 THEN BEGIN          ; Second condition is a temporary hack. The new data does not seem to have a Sample mode. How do we recognize CDS?
+   frmtime = DOUBLE(FXPAR(header, 'FRMTIME', /NOCONTINUE))    ; Backward compatibility (for data before Summer 2018, before electronics upgrade)
+   IF !err NE -1 THEN BEGIN  
+     dit_eff = hdata.int_time - frmtime
+     IF dit_eff NE 0 THEN BEGIN
+        img_in     = img_in[*,*,2]-img_in[*,*,1]
+        hdata.n_fr = 1
+        hdata[*].int_time = dit_eff
+     ENDIF ELSE BEGIN
+        img_in     = TEMPORARY(img_in[*,*,[1,2]])
+        hdata.n_fr = 2
+     ENDELSE
    ENDIF ELSE BEGIN
-      img_in     = TEMPORARY(img_in[*,*,[1,2]])
-      hdata.n_fr = 2
+      frmtime = DOUBLE(FXPAR(header, 'FRAME', /NOCONTINUE)) 
+      dit_eff = hdata.int_time - frmtime
+      IF dit_eff NE 0 THEN BEGIN
+        img_in     = img_in[*,*,1]-img_in[*,*,0]
+        hdata.n_fr = 1
+        hdata[*].int_time = dit_eff
+      ENDIF ELSE BEGIN
+        img_in     = TEMPORARY(img_in[*,*,[0,1]])
+        hdata.n_fr = 2
+      ENDELSE 
    ENDELSE
 ENDIF
 
