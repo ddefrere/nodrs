@@ -50,6 +50,14 @@ CASE instrum OF
                     lam_min1  = 8.52D-6
                     lam_max1  = 9.29D-6
                   END
+                  'N122520-95_116' : BEGIN
+                    lam_min1  = 11.94D-6
+                    lam_max1  = 13.10D-6
+                  END
+                  'N122520-95' : BEGIN
+                    lam_min1  = 11.94D-6
+                    lam_max1  = 13.10D-6
+                  END
                   'Nprime'  : BEGIN
                     lam_min1  = 9.81D-6
                     lam_max1  = 12.41D-6
