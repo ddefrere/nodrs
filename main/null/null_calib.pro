@@ -579,8 +579,13 @@ FOR i_wav = 0, n_wav-1 DO BEGIN
       IF wav_uniq[i_wav] GE 8.8D-6 AND wav_uniq[i_wav] LE 9.0D-6 THEN BEGIN
         READ_TABLE, 'nodrs/input/n08909_thruput.txt', lam_tmp, thruput, FIRST=4, SEPARATOR='TAB'
         trans = INTERPOL(thruput, lam_tmp, lambda_chnl*1D6) 
-      ELSE trans = 1
-    ENDIF 
+      ENDIF ELSE BEGIN 
+          IF wav_uniq[i_wav] GE 12D-6 AND wav_uniq[i_wav] LE 12.5D-6 THEN BEGIN
+            READ_TABLE, 'nodrs/input/n12520_thruput.txt', lam_tmp, thruput, FIRST=4, SEPARATOR='TAB'
+            trans = INTERPOL(thruput, lam_tmp, lambda_chnl*1D6) 
+          ENDIF ELSE trans = 1
+      ENDELSE
+    ENDELSE 
   ENDELSE
   
   ; Compute effective wavelength
