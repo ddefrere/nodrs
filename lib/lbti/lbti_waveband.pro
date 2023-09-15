@@ -22,6 +22,7 @@
 ; MODIFICATION HISTORY:
 ;   Version 1.0, 14-JAN-2014, by Denis Defrère, University of Arizona, ddefrere@email.arizona.edu
 ;   Version 1.1, 22-DEC-2015, now continue if unknown instrument name.
+;   Version 1.2, 15-SEP-2023, added narrow band filter
 
 PRO LBTI_WAVEBAND, lam_cen, bandwidth, INSTRUM=instrum, LMIR_FW1=lmir_fw1, LMIR_FW2=lmir_fw2, LMIR_FW3=lmir_fw3, LMIR_FW4=lmir_fw4, NOM_FW1=nom_fw1, NOM_FW2=nom_fw2
 
@@ -40,6 +41,14 @@ CASE instrum OF
                   'W08699-9_122' : BEGIN
                     lam_min1  = 8.13D-6
                     lam_max1  = 9.35D-6
+                  END
+                  'N08909-9O' : BEGIN
+                    lam_min1  = 8.52D-6
+                    lam_max1  = 9.29D-6
+                  END
+                  'N08909-9O_077' : BEGIN
+                    lam_min1  = 8.52D-6
+                    lam_max1  = 9.29D-6
                   END
                   'Nprime'  : BEGIN
                     lam_min1  = 9.81D-6
