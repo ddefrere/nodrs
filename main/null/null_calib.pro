@@ -71,6 +71,7 @@
 ;   Version 5.5,  05-SEP-2018, DD: added keyword REMOVE_ID
 ;   Version 5.6,  01-NOV-2018, DD: now properly sort the file ID when more than ten L1 files are found + updated log
 ;   Version 5.7,  10-AUG-2020, DD: updated the name of the L2 file
+;   Version 5.8,  15-SEP-2023, DD: added new filter options
 
 PRO NULL_CALIB, date, cfg_file, CALPOB=calpob, LOG_FILE=log_file, NO_INSET=no_inset, REMOVE_ID=remove_id, REMOVE_OB=remove_ob, RUNBIAS=runbias, INFO=info, PLOT=plot, VERSION=version
 
@@ -571,10 +572,15 @@ FOR i_wav = 0, n_wav-1 DO BEGIN
     READ_TABLE, 'nodrs/input/n-band_thruput.txt', lam_tmp, thruput, FIRST=4, SEPARATOR='TAB'
     trans = INTERPOL(thruput, lam_tmp, lambda_chnl*1D6)
   ENDIF ELSE BEGIN
-    IF wav_uniq[i_wav] GE 8.6D-6 AND wav_uniq[i_wav] LE 8.8D-6 THEN BEGIN
+    IF wav_uniq[i_wav] GE 8.6D-6 AND wav_uniq[i_wav] LT 8.8D-6 THEN BEGIN
       READ_TABLE, 'nodrs/input/f87_thruput.txt', lam_tmp, thruput, FIRST=4, SEPARATOR='TAB'
       trans = INTERPOL(thruput, lam_tmp, lambda_chnl*1D6)
-    ENDIF ELSE trans = 1
+    ENDIF ELSE BEGIN
+      IF wav_uniq[i_wav] GE 8.8D-6 AND wav_uniq[i_wav] LE 9.0D-6 THEN BEGIN
+        READ_TABLE, 'nodrs/input/n08909_thruput.txt', lam_tmp, thruput, FIRST=4, SEPARATOR='TAB'
+        trans = INTERPOL(thruput, lam_tmp, lambda_chnl*1D6) 
+      ELSE trans = 1
+    ENDIF 
   ENDELSE
   
   ; Compute effective wavelength
