@@ -71,6 +71,7 @@
 ;   Version 5.6,  04-APR-2017, DD: Now reads target information from header!
 ;   Version 5.7,  04-AUG-2017, DD: Updated for new formalism of REMOVE_NULLJUMP.pro
 ;   Version 5.8,  07-FEB-2018, DD: Added new plots
+;   Version 5.8,  15-SEP-2023, DD: Prevent the use of PCPMCOS and PCPHMSIN for 230523 and 230525
 
 PRO LBTI_FLX2NULL, date, OB_IDX=ob_idx, INFO=info, LOG_FILE=log_file, NO_MULTI=no_multi, NO_SAVE=no_save, PLOT=plot, RENEW=renew         
 
@@ -610,8 +611,8 @@ FOR i_f = 0, n_files-1 DO BEGIN
     ; RMS phase over the last (x) ms (remove outliers)
     AVGSDV, data_null.pcphstd, pcphstd_avg, pcphstd_rms, pcphstd_err, KAPPA=5
     
-    ; Scale to NOMIC (WARNING: hardcoded for now. These are the values used by Elwood's to copmpute PCPHMCOS and PCPHMSIN. We should use the same here!!)
-    ; WARNING 2: pcphmean should include the dither pattern to compute correctl pcphmcos and pcphmsin below
+    ; Scale to NOMIC (WARNING: hardcoded for now. These are the values used by Elwood's to compute PCPHMCOS and PCPHMSIN. We should use the same here!!)
+    ; WARNING 2: pcphmean should include the dither pattern to compute correctly pcphmcos and pcphmsin below
     pcphmean = data_null.pcphmean*!dtor*2.2/11.1     
     
     ; Compute effective wavelength for PHASECam (read target spectrum and instrument throughput)
@@ -634,8 +635,8 @@ FOR i_f = 0, n_files-1 DO BEGIN
       IF drs.null_cor EQ 1 THEN null_tot_phot -= phot_tot*(REFORM(data_null.pcphstd)*!dtor*pcwav/lam_cen)^2/2
       IF drs.null_cor GE 2 THEN BEGIN
         phi_rms_dit = REFORM(data_null.pcphstd)*!dtor*pcwav/lam_cen                                                            ; convert to radian and scale to NOMIC's wavelength
-        IF TAG_EXIST(data_null, 'pcphmcos') THEN pcphmcos = data_null.pcphmcos*COS(pcphmean)+data_null.pcphmsin*SIN(pcphmean)  ; mean cos(phase-<phase>) over DIT + backward compatibility 
-        IF TAG_EXIST(data_null, 'pcphmsin') THEN pcphmsin = data_null.pcphmsin*COS(pcphmean)-data_null.pcphmcos*SIN(pcphmean)  ; mean sin(phase-<phase>) over DIT + backward compatibility 
+        IF TAG_EXIST(data_null, 'pcphmcos') AND date NE '230523' AND date NE '230525' THEN pcphmcos = data_null.pcphmcos*COS(pcphmean)+data_null.pcphmsin*SIN(pcphmean)  ; mean cos(phase-<phase>) over DIT + backward compatibility. For 230523 and 230525, PCPHMCOS and PCPHMSIN are wrong.
+        IF TAG_EXIST(data_null, 'pcphmsin') AND date NE '230523' AND date NE '230525' THEN pcphmsin = data_null.pcphmsin*COS(pcphmean)-data_null.pcphmcos*SIN(pcphmean)  ; mean sin(phase-<phase>) over DIT + backward compatibility. For 230523 and 230525, PCPHMCOS and PCPHMSIN are wrong.
         IF drs.null_cor EQ 3 THEN MESSAGE, 'NULL_COR of 3 is depreciated'; phi_avg_dit = REFORM(data_null.pcphmean-pcphmean_avg)*!dtor*pcwav/lam_cen;)^3/3              ; Mean phase over DIT (not used anymnore)
       ENDIF
     ENDIF ELSE IF drs.null_cor GT 0 THEN null_tot_phot -= phot_tot*(REFORM(data_null.pcphstd)*!dtor*pcwav/lam_cen)^2/2
