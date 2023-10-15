@@ -72,6 +72,7 @@
 ;   Version 5.6,  01-NOV-2018, DD: now properly sort the file ID when more than ten L1 files are found + updated log
 ;   Version 5.7,  10-AUG-2020, DD: updated the name of the L2 file
 ;   Version 5.8,  15-SEP-2023, DD: added new filter options
+;   Version 5.9,  15-OCT-2023, DD: Updated text for FRA_MODE=2 (i.e., PCA background subtraction)
 
 PRO NULL_CALIB, date, cfg_file, CALPOB=calpob, LOG_FILE=log_file, NO_INSET=no_inset, REMOVE_ID=remove_id, REMOVE_OB=remove_ob, RUNBIAS=runbias, INFO=info, PLOT=plot, VERSION=version
 
@@ -378,12 +379,12 @@ IF info GT 0 THEN BEGIN
   PRINT, 'Input aperture radius   : ' + STRING(aper_rad, FORMAT='(I0)') + '  (0 for EEID + FWHM)'
   ;PRINT, 'Background inner radius : ' + STRING(bck_irad, FORMAT='(I0)')
   ;PRINT, 'Background outer radius : ' + STRING(bck_orad, FORMAT='(I0)')
-  PRINT, 'Image combination mode  : ' + STRING(img_mode, FORMAT='(I0)') + '  (0 for automatic)'
-  PRINT, 'Background nod mode     : ' + STRING(bck_mode, FORMAT='(I0)') + '  (0 none, 1 nod pairs, 2 closest n frames, 3 dedicated, 3 chopping)'
-  PRINT, 'Background floor mode   : ' + STRING(bfl_mode, FORMAT='(I0)') + '  (0 5-sigma clipped, 1 median)'
-  PRINT, 'Frame mode for flux     : ' + STRING(fra_mode, FORMAT='(I0)') + '  (0 background subtracted, 1: processed raw)'
-  PRINT, 'Flux mode               : ' + STRING(flx_mode, FORMAT='(I0)') + '  (0 aper. phot., 1: weigh. aper phot., 2: PSF-fitting)'
-  PRINT, 'Centroid mode           : ' + STRING(fit_mode, FORMAT='(I0)') + '  (0 none, 1: CNTRD., 2 GCNTRD, 3: Gaussian, 4: Lorentzan, 5: Moffat)'
+  PRINT, 'Image combination mode  : ' + STRING(img_mode, FORMAT='(I0)') + '  (0: for automatic)'
+  PRINT, 'Background nod mode     : ' + STRING(bck_mode, FORMAT='(I0)') + '  (0: none, 1 nod pairs, 2 closest n frames, 3 dedicated, 3 chopping)'
+  PRINT, 'Background floor mode   : ' + STRING(bfl_mode, FORMAT='(I0)') + '  (0: 5-sigma clipped, 1 median)'
+  PRINT, 'Frame mode for flux     : ' + STRING(fra_mode, FORMAT='(I0)') + '  (0: mean-background subtracted, 1: processed raw, 2: pca-background subtracted)'
+  PRINT, 'Flux mode               : ' + STRING(flx_mode, FORMAT='(I0)') + '  (0: aper. phot., 1: weigh. aper phot., 2: PSF-fitting)'
+  PRINT, 'Centroid mode           : ' + STRING(fit_mode, FORMAT='(I0)') + '  (0: none, 1: CNTRD., 2 GCNTRD, 3: Gaussian, 4: Lorentzan, 5: Moffat)'
   PRINT, 'Null estimator          : ' + STRING(drs.null_est, FORMAT='(I0)')
   PRINT, 'Null error mode         : ' + STRING(drs.err_mode, FORMAT='(I0)')
   PRINT, 'Scatter-rejection sigma : ' + STRING(drs.sig_sca, FORMAT='(I0)')

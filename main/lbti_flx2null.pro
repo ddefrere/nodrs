@@ -72,6 +72,7 @@
 ;   Version 5.7,  04-AUG-2017, DD: Updated for new formalism of REMOVE_NULLJUMP.pro
 ;   Version 5.8,  07-FEB-2018, DD: Added new plots
 ;   Version 5.8,  15-SEP-2023, DD: Prevent the use of PCPMCOS and PCPHMSIN for 230523 and 230525
+;   Version 5.9,  15-OCT-2023, DD: Updated for FRA_MODE=2 (i.e., PCA background subtraction)
 
 PRO LBTI_FLX2NULL, date, OB_IDX=ob_idx, INFO=info, LOG_FILE=log_file, NO_MULTI=no_multi, NO_SAVE=no_save, PLOT=plot, RENEW=renew         
 
@@ -390,7 +391,7 @@ FOR i_f = 0, n_files-1 DO BEGIN
       ENDIF
       ; REGION 1 (with the star). 
       ; Compute uncorrected background BIAS
-      IF fra_mode GT 0 THEN AVGSDV, bck_tot_phot, bck_bias_unc, junk1, junk2, KAPPA=5 ELSE bck_bias_unc = 0.  ; If frame mode of 0, then the bias is corrected by image subtraction and we have no info here...
+      IF fra_mode EQ 1 THEN AVGSDV, bck_tot_phot, bck_bias_unc, junk1, junk2, KAPPA=5 ELSE bck_bias_unc = 0.  ; If frame mode of 0, then the bias is corrected by image subtraction and we have no info here...
     ENDIF ELSE BEGIN
       coeff        = [0,0]
       nod_bckg     = 0
@@ -529,7 +530,7 @@ FOR i_f = 0, n_files-1 DO BEGIN
     ; First, determine degree of POLYNOMIAL fit by comparing the range of background floors in the complentary NOD(s) and the science nod
     ; The rule of thumb here is to use a constant if the difference between the mean background floors in each NOD is less than twice the standard deviation of background floors in teh complementary NOD(s)
     ; Use a degree of 2 otherwise 
-    IF fra_mode GT 0 THEN BEGIN
+    IF fra_mode EQ 1 THEN BEGIN
       AVGSDV, bck_bck_flr, bck_bck_avg, bck_bck_rms, bck_bck_mrms, KAPPA=5                       ; compute mean and RMS of background floors in complementary nods
       IF (MEAN(null_tot_bckg)-bck_bck_avg) LE 2*bck_bck_rms THEN poly_deg = 1 ELSE poly_deg = 0  ; compute polynomial degree
       coeff = POLY_FIT(bck_bck_flr, bck_tot_phot, poly_deg)                                      ; fit polynomial based on complementary nods

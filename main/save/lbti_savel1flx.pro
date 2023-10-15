@@ -41,6 +41,7 @@
 ;   Version 3.3, 13-MAY-2017, DD: Added NSKYPIX (number of pixels in background region) to output files
 ;   Version 3.4, 28-JUL-2017, DD: Implemented background floor mode
 ;   Version 3.5, 10-AUG-2020, DD: Added SKY_COL to output header
+;   Version 3.6, 15-OCT-2023, DD: Updated for FRA_MODE=2 (i.e., PCA background subtraction)
 
 PRO LBTI_SAVEL1FLX, flx_in, hdr_in, data_in, OUTFILE=outfile, FILE_ID=file_id
 
@@ -308,7 +309,7 @@ SXADDPAR, hdr, 'BCK_MODE',  FIX(hdr_in.bck_mode),  'Background subtraction mode'
 SXADDPAR, hdr, 'BFL_MODE',  FIX(drs.bfl_mode),     'Background floor mode (0: mean, 1: median)'
 SXADDPAR, hdr, 'FLX_MODE',  FIX(drs.flx_mode),     '0=aperture phot, 1=PSF fitting'
 SXADDPAR, hdr, 'FIT_MODE',  FIX(drs.fit_mode),     'Centroid fitting technique (0=no centroid)'
-SXADDPAR, hdr, 'FRA_MODE',  FIX(drs.fra_mode),     '0: use background subtracted images, 1: use raw images'
+SXADDPAR, hdr, 'FRA_MODE',  FIX(drs.fra_mode),     '0: use mean-background subtracted images, 1: use raw images, 2: pca-background subtracted images'
 SXADDPAR, hdr, 'IMG_MODE',  FIX(hdr_in.img_mode),  'Image combination mode'
 SXADDPAR, hdr, 'OB_MODE',   FIX(drs.ob_mode),      'OB mode'
 IF drs.flx_mode LT 2 THEN BEGIN

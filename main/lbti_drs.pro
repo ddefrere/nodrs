@@ -123,6 +123,7 @@
 ;   Version 9.2, 18-JUL-2018, DD: Now always use master bad pixel map rather than the one from the same pointing
 ;   Version 9.3, 31-JAN-2020, DD: Cleaned some keyword definition
 ;   Version 9.4, 10-AUG-2020, DD: Now do not limit the aperture size in the X direction when drs.sky_col is set to 1
+;   Version 9.5, 15-OCT-2023, DD: Updated for FRA_MODE=2 (i.e., PCA background subtraction)
 
 PRO LBTI_DRS, date, cfg_file, $                                                                                                               ; Mandatory inputs (date and config file)
               BAD_IDX=bad_idx, BCKG_IDX=bckg_idx, DARK_IDX=dark_idx, DATA_IDX=data_idx,  FLAT_IDX=flat_idx, NOD_IDX=nod_idx, OB_IDX=ob_idx, $ ; Optional inputs (file index, superseed keywords)
@@ -188,7 +189,7 @@ IF KEYWORD_SET(VERBOSE)   THEN info          = verbose $
 date_obs = '20' + STRMID(date, 0, 2) + '-' + STRMID(date, 2, 2) + '-' + STRMID(date, 4, 2)
 
 ; Parse additional info to drs structure
-drs = CREATE_STRUCT(drs, 'VERSION', 9.4, 'DATE', '10-JAN-2020', 'DATE_OBS', date_obs)
+drs = CREATE_STRUCT(drs, 'VERSION', 9.5, 'DATE', '15-OCT-2023', 'DATE_OBS', date_obs)
 
 
 ; INITIALIZE LOG AND TERMINAL OUTPUT
@@ -803,8 +804,16 @@ FOR i_nod = 0, n_nod-1 DO BEGIN
     ; Skip if already exists
     IF NOT FILE_TEST(pth.l1fits_path + drs.date_obs + drs.dir_label + pth.sep + '*_ID' + STRING(ob_cur, FORMAT='(I03)') + '*' + tag + '*.fits') OR KEYWORD_SET(RENEW) THEN BEGIN
       
-      ; Read raw L0 file (use background subtracted images or raw frames)
-      IF drs.fra_mode EQ 0 OR obstype_cur EQ 0 THEN label = 'bckg' ELSE label = 'raw'
+      ; Read raw L0 file (use mean-subtracted, pca-subtracted or raw-subtracted frames)
+      CASE drs.fra_mode OF 
+        0: label = 'bckg'
+        1: label = 'raw'
+        2: label = 'pca'
+        ELSE : MESSAGE, 'Undefined frame selection mode (FRA_MODE)' 
+      ENDCASE
+      IF obstype_cur EQ 0 THEN label = 'bckg' ; 0CT 2023, updated for PCA frames. I don't remember why this bit is here. I leave it here for backward compatibility? 
+
+
       file_nod = FILE_SEARCH(pth.l0fits_path + date_obs + pth.sep + label + pth.sep + '*_N' + STRING(nod_uniq[i_nod], FORMAT='(I03)') + '*' + STRING(min_fid[idx_cfg], FORMAT='(I06)') + '-' +  $
                              STRING(max_fid[idx_cfg], FORMAT='(I06)') + '_IMG.fits', COUNT=n0)
       IF n0 GT 0 THEN BEGIN

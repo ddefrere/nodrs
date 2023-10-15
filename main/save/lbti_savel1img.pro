@@ -33,6 +33,7 @@
 ;   Version 2.4, 02-JUL-2016, DD: Added central value
 ;   Version 2.5, 04-APR-2017, DD: Added more target information to output header
 ;   Version 2.6, 26-FEB-2019, DD: Added flx_out
+;   Version 2.7, 15-OCT-2023, DD: Updated for FRA_MODE=2 (i.e., PCA background subtraction)
 
 PRO LBTI_SAVEL1IMG, img_in, hdr_in, data_in, flx_out, FILE_ID=file_id, SPLIT=split
 
@@ -258,7 +259,7 @@ IF KEYWORD_SET(SPLIT) THEN BEGIN
   SXADDPAR, hdr, 'BCK_MODE',  hdr_in.bck_mode,  'Background subtraction mode'
   SXADDPAR, hdr, 'OB_MODE',   drs.ob_mode,      'OB mode'
   SXADDPAR, hdr, 'FIT_MODE',  drs.fit_mode,     'Centroid fitting technique (0=no centroid)'
-  SXADDPAR, hdr, 'FRA_MODE',  drs.fra_mode,     '0: use background subtracted images, 1: use raw images'
+  SXADDPAR, hdr, 'FRA_MODE',  drs.fra_mode,     '0: use mean-background subtracted images, 1: use raw images, 2: pca-background subtracted images'
   SXADDPAR, hdr, 'N_XPIX',    hdr_in.n_xpix,    'initial number of detector rows [pix]'
   SXADDPAR, hdr, 'N_YPIX',    hdr_in.n_ypix,    'initial number of detector columns [pix]'
   SXADDPAR, hdr, 'N_CLIP',    drs.n_clip,       'Size of the extracted images around [XCEN,YCEN]'
