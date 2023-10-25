@@ -1376,32 +1376,45 @@ ENDIF
   ;charsize  = 1.3
   uv_path  = pth.result_path + 'uv' + pth.sep
   IF NOT FILE_TEST(uv_path) THEN FILE_MKDIR, uv_path
+
+  ; Number of unique calibrators
+  sci_name = objname[idx_sci]
+  sci_uc   = u_coord[idx_sci]
+  sci_vc   = v_coord[idx_sci]
+  sci_uniq = sci_name(UNIQ(sci_name,SORT(sci_name)))
+  n_scitgt = N_ELEMENTS(sci_uniq)
   
-  PREP_PS, /BOLD & DEVICE, FILENAME= uv_path + date_lng + '_uv_coord.eps', /ENCAPSULATE, /COLOR, XSIZE=15.4, YSIZE=14.7, /TIMES
-  xrange = -[-10,10] & yrange = -xrange
-  PLOT, [0,0], [0,0], XTITLE='u [cycles/arcsec]', YTITLE='v [cycles/arcsec]', TITLE='uv coordinates', $;',$ ;STRTRIM(sci_name[0],2), $
-        XRANGE=xrange, YRANGE=yrange, XSTYLE=1, YSTYLE=1, /NODATA
-  ;PLOTS, [MIN(xrange), MAX(xrange)], [0,0], LINESTYLE=2
-  ;PLOTS, [0,0], [MIN(yrange), MAX(yrange)], LINESTYLE=2
-  
-  ; Then plot the good data
-  LOADCT, 13, /SILENT
-  FOR ik = 0, n_scidat-1 DO OPLOT, [-u_coord[idx_sci[ik]],u_coord[idx_sci[ik]]], [-v_coord[idx_sci[ik]],v_coord[idx_sci[ik]]], PSYM=1, COLOR=250
-  ;FOR ik = 0, n_caldat-1 DO OPLOT, [-u_coord[idx_cal[ik]],u_coord[idx_cal[ik]]], [-v_coord[idx_cal[ik]],v_coord[idx_cal[ik]]], PSYM=1, COLOR=90
-  
-  ; Overplot the orientation of the main disk (+ 90 because pa is given for the photosphere)
-  disk_ori = (114) * !Dpi / 180D0
-  x = xrange[0] + (-xrange[0] + xrange[1]) * DINDGEN(1D+2)/(1D+2-1)
-  y = TAN(disk_ori) * x
-  OPLOT, y, x, LINESTYLE=2, THICK = 4          ; PA counted from North to (y,x) and not (x,y)
-  
-  ; Draw E-N small axis at the bootm right of the figure
-  ARROW, 0.90*xrange[1], 0.90*yrange[0], 0.65*xrange[1], 0.90*yrange[0], THICK=5.5, HEAD_INDENT=0.1, /DATA
-  ARROW, 0.90*xrange[1], 0.90*yrange[0], 0.90*xrange[1], 0.65*yrange[0], THICK=5.5, HEAD_INDENT=0.1, /DATA
-  XYOUTS, 0.63*xrange[1], 0.87*yrange[0], "E", CHARTHICK=charthick, CHARSIZE=charsize
-  XYOUTS, 0.85*xrange[1], 0.64*yrange[0], "N", CHARTHICK=charthick, CHARSIZE=charsize
-  ;XYOUTS, 1.2, -2.4, "Moerchen midplane", ORIENTATION=70
-  DEVICE, /CLOSE & END_PS
+  FOR i_st = 0, n_scitgt -1 DO BEGIN
+    sci_tgt = sci_uniq[i_st]
+    idx_tgt = WHERE(sci_name EQ sci_tgt, n_uv)
+    u_tmp   = sci_uc[idx_tgt]
+    v_tmp   = sci_vc[idx_tgt]
+
+    PREP_PS, /BOLD & DEVICE, FILENAME= uv_path + date_lng + '_' + sci_tgt + '_uv_coord.eps', /ENCAPSULATE, /COLOR, XSIZE=15.4, YSIZE=14.7, /TIMES
+    xrange = -[-10,10] & yrange = -xrange
+    PLOT, [0,0], [0,0], XTITLE='u [cycles/arcsec]', YTITLE='v [cycles/arcsec]', TITLE='uv coordinates', $;',$ ;STRTRIM(sci_name[0],2), $
+          XRANGE=xrange, YRANGE=yrange, XSTYLE=1, YSTYLE=1, /NODATA
+    ;PLOTS, [MIN(xrange), MAX(xrange)], [0,0], LINESTYLE=2
+    ;PLOTS, [0,0], [MIN(yrange), MAX(yrange)], LINESTYLE=2
+    
+    ; Then plot the good data
+    LOADCT, 13, /SILENT
+    FOR i_uv = 0, n_uv-1 DO OPLOT, [-u_tmp[i_uv],u_tmp[i_uv]], [-v_tmp[i_uv],v_tmp[i_uv]], PSYM=1, COLOR=250
+      
+    ; Overplot the orientation of the main disk (+ 90 because pa is given for the photosphere)
+    ; disk_ori = (114) * !Dpi / 180D0
+    ; x = xrange[0] + (-xrange[0] + xrange[1]) * DINDGEN(1D+2)/(1D+2-1)
+    ; y = TAN(disk_ori) * x
+    ; OPLOT, y, x, LINESTYLE=2, THICK = 4          ; PA counted from North to (y,x) and not (x,y)
+    
+    ; Draw E-N small axis at the bootm right of the figure
+    ARROW, 0.90*xrange[1], 0.90*yrange[0], 0.65*xrange[1], 0.90*yrange[0], THICK=5.5, HEAD_INDENT=0.1, /DATA
+    ARROW, 0.90*xrange[1], 0.90*yrange[0], 0.90*xrange[1], 0.65*yrange[0], THICK=5.5, HEAD_INDENT=0.1, /DATA
+    XYOUTS, 0.63*xrange[1], 0.87*yrange[0], "E", CHARTHICK=charthick, CHARSIZE=charsize
+    XYOUTS, 0.85*xrange[1], 0.64*yrange[0], "N", CHARTHICK=charthick, CHARSIZE=charsize
+    ;XYOUTS, 1.2, -2.4, "Moerchen midplane", ORIENTATION=70
+    DEVICE, /CLOSE & END_PS
+  ENDFOR
   
   ; 2. Plot data and transfer function (OB based)
   ; ---------------------------------------------
