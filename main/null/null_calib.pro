@@ -73,6 +73,7 @@
 ;   Version 5.7,  10-AUG-2020, DD: updated the name of the L2 file
 ;   Version 5.8,  15-SEP-2023, DD: added new filter options
 ;   Version 5.9,  15-OCT-2023, DD: Updated text for FRA_MODE=2 (i.e., PCA background subtraction)
+;   Version 6.0,  25-OCT-2023, DD: Updated UV coordinate file name
 
 PRO NULL_CALIB, date, cfg_file, CALPOB=calpob, LOG_FILE=log_file, NO_INSET=no_inset, REMOVE_ID=remove_id, REMOVE_OB=remove_ob, RUNBIAS=runbias, INFO=info, PLOT=plot, VERSION=version
 
@@ -1376,7 +1377,7 @@ ENDIF
   uv_path  = pth.result_path + 'uv' + pth.sep
   IF NOT FILE_TEST(uv_path) THEN FILE_MKDIR, uv_path
   
-  PREP_PS, /BOLD & DEVICE, FILENAME= uv_path + 'uv_coord.eps', /ENCAPSULATE, /COLOR, XSIZE=15.4, YSIZE=14.7, /TIMES
+  PREP_PS, /BOLD & DEVICE, FILENAME= uv_path + date_lng + '_uv_coord.eps', /ENCAPSULATE, /COLOR, XSIZE=15.4, YSIZE=14.7, /TIMES
   xrange = -[-10,10] & yrange = -xrange
   PLOT, [0,0], [0,0], XTITLE='u [cycles/arcsec]', YTITLE='v [cycles/arcsec]', TITLE='uv coordinates', $;',$ ;STRTRIM(sci_name[0],2), $
         XRANGE=xrange, YRANGE=yrange, XSTYLE=1, YSTYLE=1, /NODATA
