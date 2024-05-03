@@ -73,6 +73,8 @@
 ;   Version 5.8,  07-FEB-2018, DD: Added new plots
 ;   Version 5.8,  15-SEP-2023, DD: Prevent the use of PCPMCOS and PCPHMSIN for 230523 and 230525
 ;   Version 5.9,  15-OCT-2023, DD: Updated for FRA_MODE=2 (i.e., PCA background subtraction)
+;   Version 6.0,  20-FEB-2024, DD: Added FRA_MODE to OB-restoration checking parameters
+;   Version 6.1,  03-MAY-2024, DD: Now saved processed L1 files
 
 PRO LBTI_FLX2NULL, date, OB_IDX=ob_idx, INFO=info, LOG_FILE=log_file, NO_MULTI=no_multi, NO_SAVE=no_save, PLOT=plot, RENEW=renew         
 
@@ -94,6 +96,12 @@ IF MAX(drs.null_rad) NE 0 AND NOT STRMATCH(drs.dir_label, '*_APR') THEN drs.dir_
 ; Retrieve data files
 data_path  = pth.l1fits_path + drs.date_obs + drs.dir_label + pth.sep
 null_files = FILE_SEARCH(data_path,'*NULL.fits', COUNT=n_files)
+
+; Create directories if non existent
+sav_fil_path = pth.l1fits_path + pth.sep + drs.date_obs + drs.dir_label + pth.sep + 'filtered' + pth.sep
+IF NOT FILE_TEST(sav_fil_path) THEN FILE_MKDIR, sav_fil_path
+sav_int_path = pth.l1fits_path + pth.sep + drs.date_obs + drs.dir_label + pth.sep + 'intermediate' + pth.sep
+IF NOT FILE_TEST(sav_int_path) THEN FILE_MKDIR, sav_int_path 
 
 ; Return if no nulling files
 IF n_files EQ 0 THEN BEGIN
@@ -288,7 +296,7 @@ FOR i_f = 0, n_files-1 DO BEGIN
              drs_ob.nsc_bins      EQ drs.nsc_bins      AND drs_ob.nsc_cube[0] EQ drs.nsc_cube[0] AND drs_ob.nsc_cube[1] EQ drs.nsc_cube[1] AND drs_ob.nsc_cube[2] EQ drs.nsc_cube[2] AND drs_ob.nsc_cube[3] EQ drs.nsc_cube[3] AND $
              drs_ob.nsc_cube[4]   EQ drs.nsc_cube[4]   AND drs_ob.nsc_omin    EQ drs.nsc_omin    AND drs_ob.null_cor    EQ drs.null_cor    AND drs_ob.null_rad    EQ drs.null_rad    AND drs_ob.null_lim[0] EQ drs.null_lim[0] AND $
              drs_ob.null_lim[1]   EQ drs.null_lim[1]   AND drs_ob.null_range[0] EQ drs.null_range[0] AND drs_ob.null_range[1] EQ drs.null_range[1] AND drs.n_frob EQ drs.n_frob      AND $ ; end of drs parameters
-             data_ob.objname      EQ objname       AND data_ob.lam_cen    EQ lam_cen         AND data_ob.bck_mode   EQ bck_mode        AND data_ob.bfl_mode   EQ bfl_mode        AND data_ob.fit_mode   EQ fit_mode        AND data_ob.img_mode EQ img_mode     AND $
+             data_ob.objname      EQ objname       AND data_ob.lam_cen    EQ lam_cen         AND data_ob.bck_mode   EQ bck_mode        AND data_ob.bfl_mode   EQ bfl_mode        AND data_ob.fit_mode   EQ fit_mode AND data_ob.fra_mode   EQ fra_mode        AND data_ob.img_mode EQ img_mode     AND $
              data_ob.ob_mode      EQ ob_mode       AND data_ob.pixscale   EQ pixscale        AND data_ob.precision  EQ precisio        AND data_ob.bck_irad   EQ bck_irad        AND data_ob.bck_orad EQ bck_orad THEN BEGIN                                                                              ; end of paramaters on L1 images
             data[i_f] = data_ob
             GOTO, RESTORED_OB
@@ -449,7 +457,7 @@ FOR i_f = 0, n_files-1 DO BEGIN
     ; ------------------------
      
     ; First, remove fringe jump. 18% is considerd as a jump, keep lowest sequence + those with a mean within 5% of the lowest one(and enough frames!) 
-    ; Only for dat after July 2014 (otherwise, CG only and this does not apply)
+    ; Only for data after July 2014 (otherwise, CG only and this does not apply)
     IF MEAN(data_null.mjd_obs) GT 56839 THEN BEGIN
       tmp_null = data_null.flx_tot[i_aper]/phot_tot
       tmp_null = REMOVE_NULLJUMP(tmp_null, 0.18, 0.05, 20, IDX_OUT=idx_null) 
@@ -461,7 +469,6 @@ FOR i_f = 0, n_files-1 DO BEGIN
       ENDIF
     ENDIF ELSE idx_null = LINDGEN(N_ELEMENTS(data_null.mjd_obs))
 
-      
     ; Compute mean fringe SNR and keep only the best one (low SNR usualy means bad phase setpoint)
     MEANCLIP, data_null[idx_null].pcmsnr, avg_snr, rms_snr, CLIPSIG=sig_out
     idx_null = idx_null[WHERE(data_null[idx_null].pcmsnr GE (avg_snr-sig_out*rms_snr), n_null)]
@@ -518,12 +525,32 @@ FOR i_f = 0, n_files-1 DO BEGIN
     ENDIF    
     ; Extract data
     data_null = data_null[idx_null]
-    ; Extract data for chsen aperture radius
+    ; Extract data for chosen aperture radius
     null_tot_phot  = REFORM(data_null.flx_tot[i_aper])  & null_err_phot  = REFORM(data_null.flx_err[i_aper])     ; flux measurements at null and corresponding errors
     null_tot_bckg  = REFORM(data_null.bck_tot[i_aper])  & null_err_bckg  = REFORM(data_null.bck_err[i_aper])     ; background measurements (per pixel) and corresponding errors (in the background region surrounding the photometric aperture) 
     null_tot_phot2 = REFORM(data_null.flx_tot2[i_aper]) & null_err_phot2 = REFORM(data_null.flx_err2[i_aper])    ; flux measurements at null and corresponding errors
     null_tot_bckg2 = REFORM(data_null.bck_tot2[i_aper]) & null_err_bckg2 = REFORM(data_null.bck_err2[i_aper])    ; background measurements (per pixel) and corresponding errors (in the background region surrounding the photometric aperture) 
     
+    ; Save filtered L1 file
+    IF NOT KEYWORD_SET(no_save) THEN BEGIN
+      ; Arrange data to keep only the filtered aperture
+      keys = STRUCT_KEYS(data_null)
+      FOR i = 0, N_ELEMENTS(keys) - 1 DO BEGIN
+          fieldName = keys[i]
+          fieldValue = struct[fieldName]
+          ; Check if it's a 2D array with no dimension of 1
+          IF (size(fieldValue, /n_dimensions) eq 2) THEN BEGIN
+              IF ((size(fieldValue, /dimensions))[0] ne 1) and ((size(fieldValue, /dimensions))[1] ne 1) THEN BEGIN
+                data_null[fieldName] = fieldValue[i_aper]
+              ENDIF
+          ENDIF
+      ENDFOR
+      ; NULL files 
+      outfile = STRCOMPRESS(sav_fil_path + 'UT' + STRTRIM(drs.date_obs, 2) + '_ID' + STRING(ob_id, FORMAT='(I03)') + '_' + STRTRIM(flag, 2) + '_' + STRTRIM(objname, 2) + '_DIT-' + STRING(1D+3*exptime, FORMAT='(I0)') + 'ms_' + $
+                STRING(1D+6*lam_cen, FORMAT='(I0)') + 'um' + '_APER-' + STRING(aper_rad, FORMAT='(I0)') + '_FILT-NULL' + '.fits' , /REMOVE_ALL)
+      MWRFITS, data_null, outfile, header
+    ENDIF
+
     ; Debias null and off-axis measurements by using measurements in the complementary NOD (only if FRA_MODE of 1)
     ; ----------------------------------------------------------------------------------
     
@@ -859,18 +886,15 @@ FOR i_f = 0, n_files-1 DO BEGIN
     data[i_f].qua_flg = qua_flg
     
     ; Save OB file
-    IF NOT KEYWORD_SET(no_save) and drs.null_mode NE 1 THEN BEGIN
-      ; Create directories if non existent
-      sav_path = pth.l1fits_path + pth.sep + drs.date_obs + drs.dir_label + pth.sep + 'intermediate' + pth.sep
-      IF NOT FILE_TEST(sav_path) THEN FILE_MKDIR, sav_path       
+    IF NOT KEYWORD_SET(no_save) and drs.null_mode NE 1 THEN BEGIN          
       ; Output file (new file if not /RENEW)
-      ob_file0 = sav_path + 'null_ob' + STRING(ob_id, FORMAT='(I03)') + '.sav'
+      ob_file0 = sav_int_path + 'null_ob' + STRING(ob_id, FORMAT='(I03)') + '.sav'
       ; If exist, archiv
       IF FILE_TEST(ob_file0) THEN BEGIN
         i_red   = 1
-        ob_file = sav_path + 'null_ob' + STRING(ob_id, FORMAT='(I03)') + '_v1.sav'
+        ob_file = sav_int_path + 'null_ob' + STRING(ob_id, FORMAT='(I03)') + '_v1.sav'
         WHILE FILE_TEST(ob_file) EQ 1 DO BEGIN
-          ob_file = sav_path + 'null_ob' + STRING(ob_id, FORMAT='(I03)') + '_v' + STRING(++i_red, FORMAT='(I0)') + '.sav'
+          ob_file = sav_int_path + 'null_ob' + STRING(ob_id, FORMAT='(I03)') + '_v' + STRING(++i_red, FORMAT='(I0)') + '.sav'
         ENDWHILE
         FILE_MOVE, ob_file0, ob_file
       ENDIF ELSE i_red = 0
