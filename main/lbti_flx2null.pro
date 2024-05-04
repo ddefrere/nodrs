@@ -545,7 +545,7 @@ FOR i_f = 0, n_files-1 DO BEGIN
       ; NULL files 
       outfile = STRCOMPRESS(sav_fil_path + 'UT' + STRTRIM(drs.date_obs, 2) + '_ID' + STRING(ob_id, FORMAT='(I03)') + '_' + STRTRIM(flag, 2) + '_' + STRTRIM(objname, 2) + '_DIT-' + STRING(1D+3*exptime, FORMAT='(I0)') + 'ms_' + $
                 STRING(1D+6*lam_cen, FORMAT='(I0)') + 'um' + '_APER-' + STRING(aper_rad, FORMAT='(I0)') + '_FILT-NULL' + '.fits' , /REMOVE_ALL)
-      MWRFITS, data_fil, outfile, header
+      MWRFITS, data_fil, outfile, header, /CREATE
     ENDIF
 
     ; Debias null and off-axis measurements by using measurements in the complementary NOD (only if FRA_MODE of 1)
