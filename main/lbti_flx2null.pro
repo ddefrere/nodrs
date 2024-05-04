@@ -534,14 +534,14 @@ FOR i_f = 0, n_files-1 DO BEGIN
     ; Save filtered L1 file
     IF NOT KEYWORD_SET(no_save) THEN BEGIN
       ; Arrange data to keep only the filtered aperture
-      keys = STRUCT_KEYS(data_null)
+      keys = TAG_NAMES(data_null)
       FOR i = 0, N_ELEMENTS(keys) - 1 DO BEGIN
-          fieldName = keys[i]
-          fieldValue = struct[fieldName]
+          field = keys[i]
+          value = data_null[field]
           ; Check if it's a 2D array with no dimension of 1
-          IF (size(fieldValue, /n_dimensions) eq 2) THEN BEGIN
-              IF ((size(fieldValue, /dimensions))[0] ne 1) and ((size(fieldValue, /dimensions))[1] ne 1) THEN BEGIN
-                data_null[fieldName] = fieldValue[i_aper]
+          IF (size(value, /n_dimensions) eq 2) THEN BEGIN
+              IF ((size(value, /dimensions))[0] ne 1) and ((size(value, /dimensions))[1] ne 1) THEN BEGIN
+                data_null[field] = value[i_aper]
               ENDIF
           ENDIF
       ENDFOR
