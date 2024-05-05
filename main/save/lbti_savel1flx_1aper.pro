@@ -16,7 +16,7 @@
 ; MODIFICATION HISTORY:
 ;   Version 1.0, 05-MAY-2024, by Denis Defrère, University of Arizona, denis@lbti.com
 
-PRO LBTI_SAVEL1FLX_1APER, data, header, aper_id, OUTFILE=outfile, TAG=tag
+PRO LBTI_SAVEL1FLX_1APER, data, header, aper_id, OUTFILE=outfile, OB_ID=ob_id, TAG=tag
 
 ; Define operational parameters
 COMMON GLOBAL, prm, cnf, wav, tgt, pth, drs, log
@@ -28,7 +28,7 @@ exptime  = FXPAR(header, 'EXPTIME', /NOCONTINUE)
 lam_cen  = FXPAR(header, 'WAVELENG', /NOCONTINUE)
 flag     = FXPAR(header, 'FLAG', /NOCONTINUE)
 nod_id   = FXPAR(header, 'NOD_ID', /NOCONTINUE)
-ob_id    = FXPAR(header, 'OB_ID', /NOCONTINUE)
+IF NOT_KEYWORD_SET(OB_ID) THEN ob_id = FXPAR(header, 'OB_ID', /NOCONTINUE)
 
 ; Get data type
 IF NOT KEYWORD_SET(TAG) THEN BEGIN
