@@ -109,11 +109,12 @@ IF NOT KEYWORD_SET(OUTFILE) THEN BEGIN
   ; Create file name
   id_string = '_ID' + STRING(raw_id[0], FORMAT='(I03)') + '_'
   outfile   = STRCOMPRESS(sav_path + 'UT' + STRTRIM(drs.date_obs, 2) + id_string + STRTRIM(flag, 2) + '_' + STRTRIM(objname, 2) + '_DIT-' + STRING(1D+3*exptime, FORMAT='(I0)') + 'ms_' + $
-              STRING(1D+6*lam_cen, FORMAT='(I0)') + 'um_' + '_APER-' + STRING(aper_rad, FORMAT='(I0)') + '_FILT-' + tag + '.fits' , /REMOVE_ALL)
+              STRING(1D+6*lam_cen, FORMAT='(I0)') + 'um_' + 'LSAFESKPAPER-' + STRING(aper_rad, FORMAT='(I0)') + '_FILT-' + tag + '.fits' , /REMOVE_ALL)
 ENDIF
 
 ; Add comment to the header
-WRITEFITS, outfile, header
+FXHMAKE,  hdr, /INIT, /EXTEND, 0
+FXWRITE, outfile, header
 
 ; Create header for the main table
 n_row = N_ELEMENTS(raw_id)
