@@ -376,7 +376,7 @@ FOR i_f = 0, n_files-1 DO BEGIN
 
     ; Save filtered L1 file
     IF NOT KEYWORD_SET(no_save) THEN LBTI_SAVEL1FLX_1APER, data_phot1, hdr_phot1, i_aper1, TAG='PHOT1'
-    IF NOT KEYWORD_SET(no_save) THEN LBTI_SAVEL1FLX_1APER, data_phot2, hdr_phor2, i_aper2, TAG='PHOT2'
+    IF NOT KEYWORD_SET(no_save) THEN LBTI_SAVEL1FLX_1APER, data_phot2, hdr_phot2, i_aper2, TAG='PHOT2'
     
     ; 3. Read and process background file
     ; ***********************************
