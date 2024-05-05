@@ -375,8 +375,8 @@ FOR i_f = 0, n_files-1 DO BEGIN
     ENDIF
 
     ; Save filtered L1 file
-    IF NOT KEYWORD_SET(no_save) THEN LBTI_SAVEL1FLX_1APER, data_phot1, header, i_aper, TAG='PHOT1'
-    IF NOT KEYWORD_SET(no_save) THEN LBTI_SAVEL1FLX_1APER, data_phot2, header, i_aper, TAG='PHOT2'
+    IF NOT KEYWORD_SET(no_save) THEN LBTI_SAVEL1FLX_1APER, data_phot1, header, i_aper1, TAG='PHOT1'
+    IF NOT KEYWORD_SET(no_save) THEN LBTI_SAVEL1FLX_1APER, data_phot2, header, i_aper2, TAG='PHOT2'
     
     ; 3. Read and process background file
     ; ***********************************
@@ -420,7 +420,7 @@ FOR i_f = 0, n_files-1 DO BEGIN
     ENDELSE
 
     ; Save filtered L1 file
-    IF NOT KEYWORD_SET(no_save) THEN LBTI_SAVEL1FLX_1APER, data_bckg, header, i_aper, TAG='BCKG'
+    IF NOT KEYWORD_SET(no_save) THEN LBTI_SAVEL1FLX_1APER, data_bckg, header, id_aper, TAG='BCKG'
    
     ; 4. Process and filter nulls
     ; ***************************
