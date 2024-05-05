@@ -18,8 +18,9 @@
 ;
 ; MODIFICATION HISTORY:
 ;   Version 1.0,  26-OCT-2016, Denis Defrère
+;   Version 1.1,  05-MAY-2024, DD: now return the header
 
-FUNCTION LBTI_READL1DATA, data_path, ob_id, flag, APER=aper, FILTER=filter, IDX_APER=i_aper
+FUNCTION LBTI_READL1DATA, data_path, ob_id, flag, APER=aper, FILTER=filter, IDX_APER=i_aper, HEADER=header
 
   ; First find file
   file = FILE_SEARCH(data_path,'*ID'+STRING(ob_id,FORMAT='(I03)') + '*' + flag +  '.fits', COUNT=n_files)

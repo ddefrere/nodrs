@@ -318,8 +318,8 @@ FOR i_f = 0, n_files-1 DO BEGIN
     ; 2. Read and process photometry files
     ; ************************************
     
-    data_phot1 = LBTI_READL1DATA(data_path, ob_id, 'PHOT1', APER=apr_rad, IDX_APER=i_aper1, /FILTER)
-    data_phot2 = LBTI_READL1DATA(data_path, ob_id, 'PHOT2', APER=apr_rad, IDX_APER=i_aper2, /FILTER)    
+    data_phot1 = LBTI_READL1DATA(data_path, ob_id, 'PHOT1', APER=apr_rad, IDX_APER=i_aper1, HEADER=hdr_phot1, /FILTER)
+    data_phot2 = LBTI_READL1DATA(data_path, ob_id, 'PHOT2', APER=apr_rad, IDX_APER=i_aper2, HEADER=hdr_phot2, /FILTER)    
     IF (SIZE(data_phot1))[2] EQ 8 AND (SIZE(data_phot2))[2] EQ 8 THEN BEGIN
       phot_tot_phot1 = data_phot1.flx_tot[i_aper1] & phot_err_phot1 = data_phot1.flx_err[i_aper1] & n_phot1 = N_ELEMENTS(data_phot1.mjd_obs)
       phot_tot_phot2 = data_phot2.flx_tot[i_aper2] & phot_err_phot2 = data_phot2.flx_err[i_aper2] & n_phot2 = N_ELEMENTS(data_phot2.mjd_obs)
@@ -375,8 +375,8 @@ FOR i_f = 0, n_files-1 DO BEGIN
     ENDIF
 
     ; Save filtered L1 file
-    IF NOT KEYWORD_SET(no_save) THEN LBTI_SAVEL1FLX_1APER, data_phot1, header, i_aper1, TAG='PHOT1'
-    IF NOT KEYWORD_SET(no_save) THEN LBTI_SAVEL1FLX_1APER, data_phot2, header, i_aper2, TAG='PHOT2'
+    IF NOT KEYWORD_SET(no_save) THEN LBTI_SAVEL1FLX_1APER, data_phot1, hdr_phot1, i_aper1, TAG='PHOT1'
+    IF NOT KEYWORD_SET(no_save) THEN LBTI_SAVEL1FLX_1APER, data_phot2, hdr_phor2, i_aper2, TAG='PHOT2'
     
     ; 3. Read and process background file
     ; ***********************************
@@ -384,7 +384,7 @@ FOR i_f = 0, n_files-1 DO BEGIN
     ; Process background files only if the background mode is negative (which means that a constant frame has been subtraced from each frame of the current nod and
     ; background files are obtained at the same position as the the beam). If the background mode is greater than 0, use background mesured at a different position 
     ; on the detector (so, stored directly in the NULL files). 
-    data_bckg = LBTI_READL1DATA(data_path, ob_id, 'BCKG', APER=apr_rad, IDX_APER=id_aper, /FILTER)
+    data_bckg = LBTI_READL1DATA(data_path, ob_id, 'BCKG', APER=apr_rad, IDX_APER=id_aper, HEADER=hdr_bckg, /FILTER)
     IF (SIZE(data_bckg))[2] EQ 8 AND bck_mode LT 0 THEN BEGIN
       bck_tot_phot  = data_bckg.flx_tot[id_aper]   ; Photometric aperture flux in background nod
       bck_err_phot  = data_bckg.flx_err[id_aper]   ; Corresponding error
@@ -420,7 +420,7 @@ FOR i_f = 0, n_files-1 DO BEGIN
     ENDELSE
 
     ; Save filtered L1 file
-    IF NOT KEYWORD_SET(no_save) THEN LBTI_SAVEL1FLX_1APER, data_bckg, header, id_aper, TAG='BCKG'
+    IF NOT KEYWORD_SET(no_save) THEN LBTI_SAVEL1FLX_1APER, data_bckg, hdr_bckg, id_aper, TAG='BCKG'
    
     ; 4. Process and filter nulls
     ; ***************************
