@@ -38,6 +38,9 @@ ENDIF
 
 ; Prepare data
 raw_id     = LONG(data.file_id)
+xcen       = FLOAT(data.xcen)
+ycen       = FLOAT(data.ycen)
+fwhm       = FLOAT(data.fwhm)
 mjd_obs    = DOUBLE(data.mjd_obs)
 bckg_meas  = FLOAT(data.bck_tot[aper_id])
 bckg_err   = FLOAT(data.bck_err[aper_id])
