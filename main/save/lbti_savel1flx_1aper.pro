@@ -28,7 +28,7 @@ exptime  = FXPAR(header, 'EXPTIME', /NOCONTINUE)
 lam_cen  = FXPAR(header, 'WAVELENG', /NOCONTINUE)
 flag     = FXPAR(header, 'FLAG', /NOCONTINUE)
 nod_id   = FXPAR(header, 'NOD_ID', /NOCONTINUE)
-IF NOT_KEYWORD_SET(OB_ID) THEN ob_id = FXPAR(header, 'OB_ID', /NOCONTINUE)
+IF NOT KEYWORD_SET(OB_ID) THEN ob_id = FXPAR(header, 'OB_ID', /NOCONTINUE)
 
 ; Get data type
 IF NOT KEYWORD_SET(TAG) THEN BEGIN
