@@ -53,7 +53,7 @@ IF NOT KEYWORD_SET(FILE_ID) THEN file_id = [0]
   
 ; Derive which beam is this
 ; If beam ID is 0, rely on OBSTYPE to define TAG
-; If bean ID is 1, tag cannot be NULL (must be PHOT2 or BCKG)
+; If beam ID is 1, tag cannot be NULL (must be PHOT2 or BCKG)
 tag = 'NULL' ; NULL by default unless below
 IF hdr_in.beam_id EQ 0 THEN BEGIN
   xcen  = data_in.xcen_sx

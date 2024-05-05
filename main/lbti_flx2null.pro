@@ -532,21 +532,7 @@ FOR i_f = 0, n_files-1 DO BEGIN
     null_tot_bckg2 = REFORM(data_null.bck_tot2[i_aper]) & null_err_bckg2 = REFORM(data_null.bck_err2[i_aper])    ; background measurements (per pixel) and corresponding errors (in the background region surrounding the photometric aperture) 
     
     ; Save filtered L1 file
-    IF NOT KEYWORD_SET(no_save) THEN BEGIN
-      ; Arrange data to keep only the filtered aperture
-      keys      = TAG_NAMES(data_null)
-      data_fil  = {fil: 1}
-      FOR i = 0, N_ELEMENTS(keys) - 1 DO BEGIN
-          field = keys[i]
-          value = data_null.(field)
-          ; Check if it's a 2D array with no dimension of 1
-          IF (size(value, /n_dimensions) eq 2) THEN STRUCT_ADD_FIELD, data_fil, field, value ELSE STRUCT_ADD_FIELD, data_fil, field, value[i_aper, *]
-      ENDFOR
-      ; NULL files 
-      outfile = STRCOMPRESS(sav_fil_path + 'UT' + STRTRIM(drs.date_obs, 2) + '_ID' + STRING(ob_id, FORMAT='(I03)') + '_' + STRTRIM(flag, 2) + '_' + STRTRIM(objname, 2) + '_DIT-' + STRING(1D+3*exptime, FORMAT='(I0)') + 'ms_' + $
-                STRING(1D+6*lam_cen, FORMAT='(I0)') + 'um' + '_APER-' + STRING(aper_rad, FORMAT='(I0)') + '_FILT-NULL' + '.fits' , /REMOVE_ALL)
-      WRITEFITS, outfile, data_fil, header
-    ENDIF
+    IF NOT KEYWORD_SET(no_save) THEN LBTI_SAVEL1FLX-1APER, data_null, header, i_aper, OUTFILE=outfile, TAG='NULL'
 
     ; Debias null and off-axis measurements by using measurements in the complementary NOD (only if FRA_MODE of 1)
     ; ----------------------------------------------------------------------------------
