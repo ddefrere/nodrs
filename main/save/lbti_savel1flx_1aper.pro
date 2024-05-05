@@ -104,7 +104,7 @@ ENDWHILE
 ; Define output file name
 IF NOT KEYWORD_SET(OUTFILE) THEN BEGIN
   ; Create directory
-  sav_path = pth.l1fits_path + drs.date_obs + drs.dir_label + pth.sep + 'filtered'
+  sav_path = pth.l1fits_path + drs.date_obs + drs.dir_label + pth.sep + 'filtered' + pth.sep
   IF NOT FILE_TEST(sav_path) THEN FILE_MKDIR, sav_path
   ; Create file name
   id_string = '_ID' + STRING(raw_id[0], FORMAT='(I03)') + '_'
