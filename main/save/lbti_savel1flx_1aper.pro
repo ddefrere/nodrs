@@ -28,6 +28,7 @@ exptime  = FXPAR(header, 'EXPTIME', /NOCONTINUE)
 lam_cen  = FXPAR(header, 'WAVELENG', /NOCONTINUE)
 flag     = FXPAR(header, 'FLAG', /NOCONTINUE)
 nod_id   = FXPAR(header, 'NOD_ID', /NOCONTINUE)
+ob_id    = FXPAR(header, 'OB_ID', /NOCONTINUE)
 
 ; Get data type
 IF NOT KEYWORD_SET(TAG) THEN BEGIN
@@ -107,7 +108,7 @@ IF NOT KEYWORD_SET(OUTFILE) THEN BEGIN
   sav_path = pth.l1fits_path + drs.date_obs + drs.dir_label + pth.sep + 'filtered' + pth.sep
   IF NOT FILE_TEST(sav_path) THEN FILE_MKDIR, sav_path
   ; Create file name
-  id_string = '_ID' + STRING(raw_id[0], FORMAT='(I03)') + '_'
+  id_string = '_ID' + STRING(ob_id, FORMAT='(I03)') + '_'
   outfile   = STRCOMPRESS(sav_path + 'UT' + STRTRIM(drs.date_obs, 2) + id_string + STRTRIM(flag, 2) + '_' + STRTRIM(objname, 2) + '_DIT-' + STRING(1D+3*exptime, FORMAT='(I0)') + 'ms_' + $
               STRING(1D+6*lam_cen, FORMAT='(I0)') + 'um_' + 'APER-' + STRING(aper_rad, FORMAT='(I0)') + '_FILT-' + tag + '.fits' , /REMOVE_ALL)
 ENDIF
