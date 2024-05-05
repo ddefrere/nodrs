@@ -38,12 +38,12 @@ ENDIF
 ; Prepare data
 raw_id     = LONG(data.file_id)
 mjd_obs    = DOUBLE(data.mjd_obs)
-bckg_meas  = FLOAT(data.bckg_tot[aper_id])
-bckg_err   = FLOAT(data.bckg_err[aper_id])
+bckg_meas  = FLOAT(data.bck_tot[aper_id])
+bckg_err   = FLOAT(data.bck_err[aper_id])
 flx_tot    = DOUBLE(data.flx_tot[aper_id])
 flx_err    = DOUBLE(data.flx_err[aper_id])
-bckg_meas2 = FLOAT(data.bckg_tot2[aper_id])
-bckg_err2  = FLOAT(data.bckg_err2[aper_id])
+bckg_meas2 = FLOAT(data.bck_tot2[aper_id])
+bckg_err2  = FLOAT(data.bck_err2[aper_id])
 flx_tot2   = DOUBLE(data.flx_tot2[aper_id])
 flx_err2   = DOUBLE(data.flx_err2[aper_id])
 IF TAG_EXIST(data, 'fpcpistm') THEN BEGIN
