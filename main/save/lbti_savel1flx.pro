@@ -75,7 +75,7 @@ ENDELSE
 ; Number of elements and aperture radii
 n_aper = N_ELEMENTS(drs.aper_rad)
 nod_id = REPLICATE(hdr_in.nod_id, N_ELEMENTS(data_in.xcen_dx))
-chp_id = REPLICATE(1, N_ELEMENTS(data_in.xcen_dx))             ; not used urrently
+chp_id = REPLICATE(1, N_ELEMENTS(data_in.xcen_dx))             ; not used currently
 
 ; Prepare data
 raw_id     = LONG(data_in.file_id)
