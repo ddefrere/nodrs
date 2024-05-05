@@ -1,5 +1,5 @@
 ;+
-; NAME: LBTI_SAVEL1FLX-1APER
+; NAME: LBTI_SAVEL1FLX_1APER
 ; 
 ; PURPOSE:
 ;   This procedure saves data tables in level 1 FITS files for only one aperture.
@@ -16,7 +16,7 @@
 ; MODIFICATION HISTORY:
 ;   Version 1.0, 05-MAY-2024, by Denis Defrère, University of Arizona, denis@lbti.com
 
-PRO LBTI_SAVEL1FLX-1APER, data, header, aper_id, OUTFILE=outfile, TAG=tag
+PRO LBTI_SAVEL1FLX_1APER, data, header, aper_id, OUTFILE=outfile, TAG=tag
 
 ; Define operational parameters
 COMMON GLOBAL, prm, cnf, wav, tgt, pth, drs, log
