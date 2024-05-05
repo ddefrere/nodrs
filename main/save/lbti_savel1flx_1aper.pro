@@ -47,27 +47,27 @@ bckg_err2  = FLOAT(data.bck_err2[aper_id])
 flx_tot2   = DOUBLE(data.flx_tot2[aper_id])
 flx_err2   = DOUBLE(data.flx_err2[aper_id])
 IF TAG_EXIST(data, 'fpcpistm') THEN BEGIN
-  pcplsp    = FLOAT(data_in.pcplsp)
-  pctipsp   = FLOAT(data_in.pctipsp)
-  pctltsp   = FLOAT(data_in.pctltsp)
-  spdthpos  = FLOAT(data_in.spdthpos)
-  fpcpistm  = FLOAT(data_in.fpcpistm)
-  fpcpists  = FLOAT(data_in.fpcpists)
-  fpcazm    = FLOAT(data_in.fpcazm)
-  fpcelm    = FLOAT(data_in.fpcelm)
-  fpcazs    = FLOAT(data_in.fpcazs)
-  fpcels    = FLOAT(data_in.fpcels)
-  pcphmean  = FLOAT(data_in.pcphmean)
-  pcphstd   = FLOAT(data_in.pcphstd)
-  pcphmcos  = FLOAT(data_in.pcphmcos)
-  pcphmsin  = FLOAT(data_in.pcphmsin)
-  pcfjmps   = FIX(data_in.pcfjmps)
-  pcmsnr    = FLOAT(data_in.pcmsnr)
-  pcphmean2 = FLOAT(data_in.pcphmean2)
-  pcphstd2  = FLOAT(data_in.pcphstd2)
-  pcphmcos2 = FLOAT(data_in.pcphmcos2)
-  pcphmsin2 = FLOAT(data_in.pcphmsin2)
-  pcmsnr2   = FLOAT(data_in.pcmsnr2) 
+  pcplsp    = FLOAT(data.pcplsp)
+  pctipsp   = FLOAT(data.pctipsp)
+  pctltsp   = FLOAT(data.pctltsp)
+  spdthpos  = FLOAT(data.spdthpos)
+  fpcpistm  = FLOAT(data.fpcpistm)
+  fpcpists  = FLOAT(data.fpcpists)
+  fpcazm    = FLOAT(data.fpcazm)
+  fpcelm    = FLOAT(data.fpcelm)
+  fpcazs    = FLOAT(data.fpcazs)
+  fpcels    = FLOAT(data.fpcels)
+  pcphmean  = FLOAT(data.pcphmean)
+  pcphstd   = FLOAT(data.pcphstd)
+  pcphmcos  = FLOAT(data.pcphmcos)
+  pcphmsin  = FLOAT(data.pcphmsin)
+  pcfjmps   = FIX(data.pcfjmps)
+  pcmsnr    = FLOAT(data.pcmsnr)
+  pcphmean2 = FLOAT(data.pcphmean2)
+  pcphstd2  = FLOAT(data.pcphstd2)
+  pcphmcos2 = FLOAT(data.pcphmcos2)
+  pcphmsin2 = FLOAT(data.pcphmsin2)
+  pcmsnr2   = FLOAT(data.pcmsnr2) 
 ENDIF  
 
 ; Define output file name
@@ -111,7 +111,7 @@ n_row = N_ELEMENTS(raw_id)
 FXBHMAKE, hdr, n_row, /INIT, EXTVER=1, 'RESULTS_SUMMARY', 'results of the data reduction'
 
 ; Init column number
-IF TAG_EXIST(data_in, 'fpcpistm') THEN n_col = 37 ELSE n_col = 16
+IF TAG_EXIST(data, 'fpcpistm') THEN n_col = 37 ELSE n_col = 16
 col   = LINDGEN(n_col)+1L
 
 ; Fill extension header with column names
@@ -131,7 +131,7 @@ FXBADDCOL, 13L, hdr, 0., 'BCK_TOT2', 'Empty-region mean background per pixel', T
 FXBADDCOL, 14L, hdr, 0., 'BCK_ERR2', 'Empty-region RMS background per pixel', TUNIT='ADU'
 FXBADDCOL, 15L, hdr, 0D, 'FLX_TOT2', 'Empty-region measured flux', TUNIT='ADU'
 FXBADDCOL, 16L, hdr, 0D, 'FLX_ERR2', 'Empty-region error on the measured flux', TUNIT='ADU'
-IF TAG_EXIST(data_in, 'fpcpistm') THEN BEGIN
+IF TAG_EXIST(data, 'fpcpistm') THEN BEGIN
   FXBADDCOL, 17L, hdr, 0., 'PCPLSP',   'Pathlength setpoint', TUNIT='deg'
   FXBADDCOL, 18L, hdr, 0., 'PCTIPSP',  'Tip setpoint', TUNIT='mas'
   FXBADDCOL, 19L, hdr, 0., 'PCTLTSP',  'Tilt setpoint', TUNIT='mas' 
@@ -157,7 +157,7 @@ ENDIF
 
 ; Write extension header to FITS file
 FXBCREATE, unit, outfile, hdr
-IF TAG_EXIST(data_in, 'fpcpistm') $
+IF TAG_EXIST(data, 'fpcpistm') $
  THEN FXBWRITM,  unit, col, raw_id, mjd_obs, FIX(nod_id), FIX(chp_id), FLOAT(xcen), FLOAT(ycen), FLOAT(fwhm), FLOAT(slrms), $
                  TRANSPOSE(bckg_meas), TRANSPOSE(bckg_err), TRANSPOSE(flx_tot), TRANSPOSE(flx_err), TRANSPOSE(bckg_meas2), TRANSPOSE(bckg_err2), $
                  TRANSPOSE(flx_tot2), TRANSPOSE(flx_err2), pcplsp, pctipsp, pctltsp, spdthpos, fpcpistm, $
