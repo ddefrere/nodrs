@@ -373,6 +373,10 @@ FOR i_f = 0, n_files-1 DO BEGIN
         GOTO, RESTART
       ENDIF
     ENDIF
+
+    ; Save filtered L1 file
+    IF NOT KEYWORD_SET(no_save) THEN LBTI_SAVEL1FLX_1APER, data_phot1, header, i_aper, TAG='PHOT1'
+    IF NOT KEYWORD_SET(no_save) THEN LBTI_SAVEL1FLX_1APER, data_phot2, header, i_aper, TAG='PHOT2'
     
     ; 3. Read and process background file
     ; ***********************************
@@ -414,6 +418,9 @@ FOR i_f = 0, n_files-1 DO BEGIN
         GOTO, SKIP_OB
       ENDIF
     ENDELSE
+
+    ; Save filtered L1 file
+    IF NOT KEYWORD_SET(no_save) THEN LBTI_SAVEL1FLX_1APER, data_bckg, header, i_aper, TAG='BCKG'
    
     ; 4. Process and filter nulls
     ; ***************************
@@ -532,7 +539,7 @@ FOR i_f = 0, n_files-1 DO BEGIN
     null_tot_bckg2 = REFORM(data_null.bck_tot2[i_aper]) & null_err_bckg2 = REFORM(data_null.bck_err2[i_aper])    ; background measurements (per pixel) and corresponding errors (in the background region surrounding the photometric aperture) 
     
     ; Save filtered L1 file
-    IF NOT KEYWORD_SET(no_save) THEN LBTI_SAVEL1FLX_1APER, data_null, header, i_aper, OUTFILE=outfile, TAG='NULL'
+    IF NOT KEYWORD_SET(no_save) THEN LBTI_SAVEL1FLX_1APER, data_null, header, i_aper, TAG='NULL'
 
     ; Debias null and off-axis measurements by using measurements in the complementary NOD (only if FRA_MODE of 1)
     ; ----------------------------------------------------------------------------------

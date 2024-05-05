@@ -84,10 +84,10 @@ aper_rad = FXPAR(header, 'APERRAD' + STRING(aper_id, FORMAT='(I0)'), /NOCONTINUE
 bck_irad = FXPAR(header, 'BCKIRAD' + STRING(aper_id, FORMAT='(I0)'), /NOCONTINUE)
 bck_orad = FXPAR(header, 'BCKORAD' + STRING(aper_id, FORMAT='(I0)'), /NOCONTINUE)
 nskypix  = FXPAR(header, 'NSKYPIX' + STRING(aper_id, FORMAT='(I0)'), /NOCONTINUE)
-SXADDPAR, hdr, 'APERRAD', FIX(aper_rad), 'Radius for aperture photometry [pix]'
-SXADDPAR, hdr, 'BCKIRAD', FIX(bck_irad), 'Inner radius for background computation [pix]'
-SXADDPAR, hdr, 'BCKORAD', FIX(bck_orad), 'Outer radius for background computation [pix]'
-SXADDPAR, hdr, 'NSKYPIX', FIX(nskypix),  'Number of pixels in background region'
+SXADDPAR, header, 'APERRAD', FIX(aper_rad), 'Radius for aperture photometry [pix]'
+SXADDPAR, header, 'BCKIRAD', FIX(bck_irad), 'Inner radius for background computation [pix]'
+SXADDPAR, header, 'BCKORAD', FIX(bck_orad), 'Outer radius for background computation [pix]'
+SXADDPAR, header, 'NSKYPIX', FIX(nskypix),  'Number of pixels in background region'
 
 ; REMOVE other aperture info from the header
 !err = 0
@@ -109,7 +109,7 @@ IF NOT KEYWORD_SET(OUTFILE) THEN BEGIN
   ; Create file name
   id_string = '_ID' + STRING(raw_id[0], FORMAT='(I03)') + '_'
   outfile   = STRCOMPRESS(sav_path + 'UT' + STRTRIM(drs.date_obs, 2) + id_string + STRTRIM(flag, 2) + '_' + STRTRIM(objname, 2) + '_DIT-' + STRING(1D+3*exptime, FORMAT='(I0)') + 'ms_' + $
-              STRING(1D+6*lam_cen, FORMAT='(I0)') + 'um_' + 'LSAFESKPAPER-' + STRING(aper_rad, FORMAT='(I0)') + '_FILT-' + tag + '.fits' , /REMOVE_ALL)
+              STRING(1D+6*lam_cen, FORMAT='(I0)') + 'um_' + 'APER-' + STRING(aper_rad, FORMAT='(I0)') + '_FILT-' + tag + '.fits' , /REMOVE_ALL)
 ENDIF
 
 ; Add comment to the header
