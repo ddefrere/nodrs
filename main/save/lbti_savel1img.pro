@@ -290,10 +290,7 @@ FXBADDCOL, 9L, hdr, chp_id[0],             'CHP_ID',    'Chop identification num
 FXBADDCOL, 10L, hdr, xcen[0],              'XCEN',      'X position of the star'
 FXBADDCOL, 11L, hdr, ycen[0],              'YCEN',      'Y position of the star'
 FXBADDCOL, 12L, hdr, slope[0],             'SLOPE',     'Slope of the fitted Moffat profile'
-FXBADDCOL, 13L, hdr, flx_out.bckg_err[0],  'BCK_ERR',   'Background error'
-
-PRINT, SIZE(flx_out.bckg_err[0])
-PRINT, SIZE(flx_out[0].bckg_err)
+FXBADDCOL, 13L, hdr, flx_out[0].bckg_err,  'BCK_ERR',   'Background error'
 
 ; Write extension header to FITS file
 FXBCREATE, unit, outfile, hdr
