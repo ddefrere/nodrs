@@ -34,6 +34,7 @@
 ;   Version 2.5, 04-APR-2017, DD: Added more target information to output header
 ;   Version 2.6, 26-FEB-2019, DD: Added flx_out
 ;   Version 2.7, 15-OCT-2023, DD: Updated for FRA_MODE=2 (i.e., PCA background subtraction)
+;   Version 2.8, 24-MAY-2024, DD: Minor fix for column 13 (added transpose)
 
 PRO LBTI_SAVEL1IMG, img_in, hdr_in, data_in, flx_out, FILE_ID=file_id, SPLIT=split
 
@@ -292,8 +293,10 @@ FXBADDCOL, 12L, hdr, slope[0],             'SLOPE',     'Slope of the fitted Mof
 FXBADDCOL, 13L, hdr, flx_out.bckg_err[0],  'BCK_ERR',   'Background error'
 
 ; Write extension header to FITS file
+PRINT, SIZE(TRANSPOSE(flx_out.bckg_err))
+PRINT, SIZE(TRANSPOSE(flx_out.bckg_err))
 FXBCREATE, unit, outfile, hdr
-FXBWRITM,  unit, col, data_in.file_id, data_in.mjd_obs, data_in.lbt_utc, data_in.lbt_lst, data_in.lbt_alt, data_in.lbt_az, data_in.lbt_para, $
+FXBWRITM,  unit, col, TRANSPOSE(flx_out.bckg_err), data_in.mjd_obs, data_in.lbt_utc, data_in.lbt_lst, data_in.lbt_alt, data_in.lbt_az, data_in.lbt_para, $
                       nod_id, chp_id, xcen, ycen, slope, TRANSPOSE(flx_out.bckg_err)
 FXBFINISH, unit
 
