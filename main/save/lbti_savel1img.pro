@@ -293,10 +293,8 @@ FXBADDCOL, 12L, hdr, slope[0],             'SLOPE',     'Slope of the fitted Mof
 FXBADDCOL, 13L, hdr, flx_out.bckg_err[0],  'BCK_ERR',   'Background error'
 
 ; Write extension header to FITS file
-PRINT, SIZE(TRANSPOSE(flx_out.bckg_err))
-PRINT, SIZE(TRANSPOSE(flx_out.bckg_err))
 FXBCREATE, unit, outfile, hdr
-FXBWRITM,  unit, col, TRANSPOSE(flx_out.bckg_err), data_in.mjd_obs, data_in.lbt_utc, data_in.lbt_lst, data_in.lbt_alt, data_in.lbt_az, data_in.lbt_para, $
+FXBWRITM,  unit, col, data_in.file_id, data_in.mjd_obs, data_in.lbt_utc, data_in.lbt_lst, data_in.lbt_alt, data_in.lbt_az, data_in.lbt_para, $
                       nod_id, chp_id, xcen, ycen, slope, TRANSPOSE(flx_out.bckg_err)
 FXBFINISH, unit
 
