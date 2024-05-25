@@ -100,9 +100,9 @@ null_files = FILE_SEARCH(data_path,'*NULL.fits', COUNT=n_files)
 
 ; Create directories if non existent
 sav_fil_path = pth.l1fits_path + pth.sep + drs.date_obs + drs.dir_label + pth.sep + 'filtered' + pth.sep
-IF NOT FILE_TEST(sav_fil_path) THEN FILE_MKDIR, sav_fil_path
+IF NOT FILE_TEST(sav_fil_path) THEN BEGIN FILE_MKDIR, sav_fil_path & SPAWN, 'chmod 775 ' + sav_fil_path
 sav_int_path = pth.l1fits_path + pth.sep + drs.date_obs + drs.dir_label + pth.sep + 'intermediate' + pth.sep
-IF NOT FILE_TEST(sav_int_path) THEN FILE_MKDIR, sav_int_path 
+IF NOT FILE_TEST(sav_int_path) THEN BEGIN FILE_MKDIR, sav_int_path & SPAWN, 'chmod 775 ' + sav_int_path
 
 ; Return if no nulling files
 IF n_files EQ 0 THEN BEGIN
@@ -207,8 +207,8 @@ trans = trans[idx_k]
 ; Prepare plot paths
 plot_path = pth.result_path + 'null' + pth.sep + drs.date_obs + drs.dir_label + pth.sep               ; Main path for NULL plots
 diag_path = pth.result_path + 'diagnostic' + pth.sep + 'phasecam' + pth.sep + drs.date_obs + pth.sep  ; Main path for DIAGNOSTIC plots
-IF NOT FILE_TEST(plot_path) THEN FILE_MKDIR, plot_path                                                ; Create directory if it does not exist
-IF NOT FILE_TEST(diag_path) THEN FILE_MKDIR, diag_path                                                ; Create directory if it does not exist
+IF NOT FILE_TEST(plot_path) THEN BEGIN FILE_MKDIR, plot_path & SPAWN, 'chmod 775 ' + plot_path        ; Create directory if it does not exist
+IF NOT FILE_TEST(diag_path) THEN BEGIN FILE_MKDIR, diag_path & SPAWN, 'chmod 775 ' + diag_path        ; Create directory if it does not exist
 
 ; Replicate output structure to the number of maximum lines
 data    = REPLICATE(data, n_files)
@@ -309,8 +309,8 @@ FOR i_f = 0, n_files-1 DO BEGIN
     ; Prepare plot and log paths (define plot path anyway because used later for logs)
     plot_path_ob  = plot_path + 'aper-' + STRING(apr_rad, FORMAT='(I0)') + 'pix' + pth.sep + 'ob' + STRING(ob_id, FORMAT='(I0)') + pth.sep
     plot_path_nsc = plot_path_ob + 'nsc' + pth.sep
-    IF NOT FILE_TEST(plot_path_ob) THEN FILE_MKDIR, plot_path_ob & SPAWN, 'chmod 775 ' + plot_path_ob
-    IF NOT FILE_TEST(plot_path_nsc) THEN FILE_MKDIR, plot_path_nsc & SPAWN, 'chmod 775 ' + plot_path_nsc
+    IF NOT FILE_TEST(plot_path_ob) THEN BEGIN FILE_MKDIR, plot_path_ob & SPAWN, 'chmod 775 ' + plot_path_ob
+    IF NOT FILE_TEST(plot_path_nsc) THEN BEGIN FILE_MKDIR, plot_path_nsc & SPAWN, 'chmod 775 ' + plot_path_nsc
     
     ; Plot results
     plotnull = plot_path_ob + drs.date_obs + '_OB' + STRING(ob_id, FORMAT='(I03)') + '_' + objname + '_dit-' + STRING(1000.*exptime, FORMAT='(I0)') + 'ms_wav-' + STRING(1D+6*lam_cen, FORMAT='(I0)') + 'um'
@@ -973,7 +973,7 @@ IF n_ok GT 0 THEN data = data[idx_ok]
 IF NOT KEYWORD_SET(no_save) THEN BEGIN  
   ; Create directories if non existent
   sav_path = pth.l1fits_path + pth.sep + drs.date_obs + drs.dir_label + pth.sep 
-  IF NOT FILE_TEST(sav_path) THEN FILE_MKDIR, sav_path        ; Create directory if it does not exist
+  IF NOT FILE_TEST(sav_path) THEN BEGIN FILE_MKDIR, sav_path & SPAWN, 'chmod 775 ' + sav_path        ; Create directory if it does not exist
   
   ; If exist, archive it
   outfile = sav_path + 'UT' + drs.date_obs + '.fits'
