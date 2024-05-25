@@ -24,6 +24,7 @@
 ;   Version 1.8,  29-SEP-2017, DD: updated touse the new keywords in the L2 files (i.e., NULL_EST and SIG_SCA)
 ;   Version 1.9,  29-JUL-2018, DD: added comments to error computation
 ;   Version 2.0,  31-JUL-2018, DD: improved consitency with NULL_CALIB.pro
+;   Version 2.1,  24-MAY-2024, DD: Update file permission
 
 PRO NULL_FIT, date, cfg_file, INFO=info, LOG_FILE=log_file, L1TYPE=l1type, PLOT=plot, PS=ps
    

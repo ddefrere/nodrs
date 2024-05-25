@@ -17,6 +17,7 @@
 ; MODIFICATION HISTORY:
 ;   Version 1.0, 02-NOV-2013, by Denis Defrère, University of Arizona, ddefrere@email.arizona.edu (adapted from former routine 'remove_bck.pro')
 ;   Version 1.1, 04-APR-2015, DD: Added nodding period
+;   Version 1.2, 24-MAY-2024, DD: Update file permission
 
 PRO LBTI_SAVEL1VIS, vis_in, hdr_in, data_in, OUTFILE=outfile, FILE_ID=file_id
 
@@ -58,7 +59,7 @@ nod_id = INTARR(n) + hdr_in.nod_id
 IF NOT KEYWORD_SET(OUTFILE) THEN BEGIN
   ; Create directory
   sav_path = pth.l1fits_path + drs.date_obs + pth.sep
-  IF NOT FILE_TEST(sav_path) THEN FILE_MKDIR, sav_path
+  IF NOT FILE_TEST(sav_path) THEN FILE_MKDIR, sav_path & SPAWN, 'chmod 775 ' + sav_path
   ; Create file name
   id_string = '_ID' + STRING(file_id[0], FORMAT='(I02)') + '_'
   outfile   = STRCOMPRESS(sav_path + 'UT' + STRTRIM(drs.date_obs, 2) + id_string + STRTRIM(hdr_in.flag, 2) + '_' + STRTRIM(hdr_in.objname, 2) + '_DIT-' + STRING(1D+3*hdr_in.int_time, FORMAT='(I0)') + 'ms_' + $

@@ -15,6 +15,7 @@
 ;
 ; MODIFICATION HISTORY:
 ;   Version 1.0, 05-MAY-2024, by Denis Defrère, University of Arizona, denis@lbti.com
+;   Version 1.1, 24-MAY-2024, DD: Update file permission
 
 PRO LBTI_SAVEL1FLX_1APER, data, header, aper_id, OUTFILE=outfile, OB_ID=ob_id, TAG=tag
 
@@ -106,7 +107,7 @@ ENDWHILE
 IF NOT KEYWORD_SET(OUTFILE) THEN BEGIN
   ; Create directory
   sav_path = pth.l1fits_path + drs.date_obs + drs.dir_label + pth.sep + 'filtered' + pth.sep
-  IF NOT FILE_TEST(sav_path) THEN FILE_MKDIR, sav_path
+  IF NOT FILE_TEST(sav_path) THEN FILE_MKDIR, sav_path & SPAWN, 'chmod 775 ' + sav_path
   ; Create file name
   id_string = '_ID' + STRING(ob_id, FORMAT='(I03)') + '_'
   outfile   = STRCOMPRESS(sav_path + 'UT' + STRTRIM(drs.date_obs, 2) + id_string + STRTRIM(flag, 2) + '_' + STRTRIM(objname, 2) + '_DIT-' + STRING(1D+3*exptime, FORMAT='(I0)') + 'ms_' + $

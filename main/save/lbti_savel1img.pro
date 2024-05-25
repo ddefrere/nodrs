@@ -34,7 +34,7 @@
 ;   Version 2.5, 04-APR-2017, DD: Added more target information to output header
 ;   Version 2.6, 26-FEB-2019, DD: Added flx_out
 ;   Version 2.7, 15-OCT-2023, DD: Updated for FRA_MODE=2 (i.e., PCA background subtraction)
-;   Version 2.8, 24-MAY-2024, DD: Minor fix for column 13 (added transpose)
+;   Version 2.8, 24-MAY-2024, DD: Minor fix for column 13 (added transpose) + update file permission
 
 PRO LBTI_SAVEL1IMG, img_in, hdr_in, data_in, flx_out, FILE_ID=file_id, SPLIT=split
 
@@ -65,7 +65,7 @@ chp_id = REPLICATE(1, N_ELEMENTS(data_in.xcen_dx))             ; not used urrent
 
 ; Create output path if does not exist
 sav_path = pth.l1fits_path + pth.sep + drs.date_obs + drs.dir_label + pth.sep
-IF NOT FILE_TEST(sav_path) THEN FILE_MKDIR, sav_path
+IF NOT FILE_TEST(sav_path) THEN FILE_MKDIR, sav_path & SPAWN, 'chmod 775 ' + sav_path
 
 ; Define output file name
 id_string = '_ID' + STRING(file_id[0], FORMAT='(I03)') + '_'

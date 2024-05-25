@@ -15,6 +15,7 @@
 ;
 ; MODIFICATION HISTORY:
 ;   Version 1.0,  04-APR-2015, by Denis Defrère, University of Arizona, ddefrere@email.arizona.edu
+;   Version 1.1, 24-MAY-2024, DD: Update file permission
 
 PRO NULL_CALIBIMG, date, cfg_file, LOG_FILE=log_file, NO_INSET=no_inset, INFO=info, PLOT=plot
 

@@ -36,6 +36,7 @@
 ;   Version 2.8, 23-DEC-2015, DD: Added precision and image mode to output data
 ;   Version 2.9, 05-FEB-2016, DD: Added pointing ID to output structure
 ;   Version 3.0, 08-NOV-2016, DD: Added error on photometry
+;   Version 3.1, 24-MAY-2024, DD: Update file permission
 
 PRO LBTI_SAVEL1SUM, data, FILE_VERSION=file_version, OUTFILE=outfile
    
@@ -46,7 +47,7 @@ COMMON GLOBAL, prm, cnf, wav, tgt, pth, drs, log
 IF NOT KEYWORD_SET(OUTFILE) THEN BEGIN
   ; Create directory
   sav_path = pth.l1fits_path + pth.sep + drs.date_obs + drs.dir_label + pth.sep
-  IF NOT FILE_TEST(sav_path) THEN FILE_MKDIR, sav_path
+  IF NOT FILE_TEST(sav_path) THEN FILE_MKDIR, sav_path & SPAWN, 'chmod 775 ' + sav_path
   ; Create file name
   outfile  = sav_path + 'UT' + drs.date_obs + '_SUM.fits'
 ENDIF

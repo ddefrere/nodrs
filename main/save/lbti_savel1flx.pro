@@ -42,6 +42,7 @@
 ;   Version 3.4, 28-JUL-2017, DD: Implemented background floor mode
 ;   Version 3.5, 10-AUG-2020, DD: Added SKY_COL to output header
 ;   Version 3.6, 15-OCT-2023, DD: Updated for FRA_MODE=2 (i.e., PCA background subtraction)
+;   Version 3.7, 24-MAY-2024, DD: Update file permission
 
 PRO LBTI_SAVEL1FLX, flx_in, hdr_in, data_in, OUTFILE=outfile, FILE_ID=file_id
 
@@ -116,7 +117,7 @@ ENDIF
 IF NOT KEYWORD_SET(OUTFILE) THEN BEGIN
   ; Create directory
   sav_path = pth.l1fits_path + drs.date_obs + drs.dir_label + pth.sep
-  IF NOT FILE_TEST(sav_path) THEN FILE_MKDIR, sav_path
+  IF NOT FILE_TEST(sav_path) THEN FILE_MKDIR, sav_path & SPAWN, 'chmod 775 ' + sav_path
   ; Create file name
   id_string = '_ID' + STRING(file_id[0], FORMAT='(I03)') + '_'
   outfile   = STRCOMPRESS(sav_path + 'UT' + STRTRIM(drs.date_obs, 2) + id_string + STRTRIM(hdr_in.flag, 2) + '_' + STRTRIM(hdr_in.objname, 2) + '_DIT-' + STRING(1D+3*hdr_in.int_time, FORMAT='(I0)') + 'ms_' + $

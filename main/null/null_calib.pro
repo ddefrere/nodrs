@@ -74,6 +74,7 @@
 ;   Version 5.8,  15-SEP-2023, DD: added new filter options
 ;   Version 5.9,  15-OCT-2023, DD: Updated text for FRA_MODE=2 (i.e., PCA background subtraction)
 ;   Version 6.0,  25-OCT-2023, DD: Updated UV coordinate file name
+;   Version 6.1,  24-MAY-2024, DD: Update file permission
 
 PRO NULL_CALIB, date, cfg_file, CALPOB=calpob, LOG_FILE=log_file, NO_INSET=no_inset, REMOVE_ID=remove_id, REMOVE_OB=remove_ob, RUNBIAS=runbias, INFO=info, PLOT=plot, VERSION=version
 
