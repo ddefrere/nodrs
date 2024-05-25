@@ -59,7 +59,7 @@ nod_id = INTARR(n) + hdr_in.nod_id
 IF NOT KEYWORD_SET(OUTFILE) THEN BEGIN
   ; Create directory
   sav_path = pth.l1fits_path + drs.date_obs + pth.sep
-  IF NOT FILE_TEST(sav_path) THEN BEGIN FILE_MKDIR, sav_path & SPAWN, 'chmod 775 ' + sav_path
+  IF NOT FILE_TEST(sav_path) THEN FILE_MKDIR, sav_path & SPAWN, 'chmod 775 ' + sav_path
   ; Create file name
   id_string = '_ID' + STRING(file_id[0], FORMAT='(I02)') + '_'
   outfile   = STRCOMPRESS(sav_path + 'UT' + STRTRIM(drs.date_obs, 2) + id_string + STRTRIM(hdr_in.flag, 2) + '_' + STRTRIM(hdr_in.objname, 2) + '_DIT-' + STRING(1D+3*hdr_in.int_time, FORMAT='(I0)') + 'ms_' + $

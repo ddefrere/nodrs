@@ -136,7 +136,7 @@ ENDIF
 
 ; Output directory
 l2_dir = pth.l2fits_path + pth.sep + date_lng + drs.dir_label + pth.sep
-IF NOT FILE_TEST(l2_dir) THEN FILE_MKDIR, l2_dir
+IF NOT FILE_TEST(l2_dir) THEN FILE_MKDIR, l2_dir & SPAWN, 'chmod 775 ' + l2_dir 
 
 ; File version
 IF KEYWORD_SET(VERSION) THEN vers = '_v' + STRING(version, FORMAT='(I0)') ELSE vers = ''
@@ -1376,7 +1376,7 @@ ENDIF
   ;charthick = 4.0
   ;charsize  = 1.3
   uv_path  = pth.result_path + 'uv' + pth.sep
-  IF NOT FILE_TEST(uv_path) THEN FILE_MKDIR, uv_path
+  IF NOT FILE_TEST(uv_path) THEN FILE_MKDIR, uv_path & SPAWN, 'chmod 775 ' + uv_path
 
   ; Number of unique calibrators
   sci_name = objname[idx_sci]
@@ -1428,7 +1428,7 @@ ENDIF
   IF STRLEN(STRCOMPRESS(label, /REMOVE_ALL)) EQ 0 THEN tf_path  = pth.result_path + 'TF' + pth.sep + date_lng + pth.sep $
                                                   ELSE tf_path  = pth.result_path + 'TF' + pth.sep + date_lng + pth.sep + label + pth.sep  
   
-  IF NOT FILE_TEST(tf_path) THEN FILE_MKDIR, tf_path
+  IF NOT FILE_TEST(tf_path) THEN FILE_MKDIR, tf_path & SPAWN, 'chmod 775 ' + tf_path 
   plotname =  tf_path + date_lng + '_TF-OB_APER' + STRING(aper_rad, FORMAT='(I0)') + bias_tag + '.eps'
   ; Init plot
   PREP_PS, /BOLD

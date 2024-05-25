@@ -175,7 +175,7 @@ SXADDPAR, hdr, 'YCEN_SX',   MEAN(hdr_in.ycen[0]),       'Mean y coordinate SX'
 ; Define file path/name
 IF NOT KEYWORD_SET(SUB_DIR) THEN sub_dir = ' '
 sav_path = pth.l0fits_path + hdr_in[0].date_obs[0] + pth.sep + sub_dir + pth.sep 
-IF NOT FILE_TEST(sav_path) THEN BEGIN FILE_MKDIR, sav_path & SPAWN, 'chmod 775 ' + sav_path
+IF NOT FILE_TEST(sav_path) THEN FILE_MKDIR, sav_path & SPAWN, 'chmod 775 ' + sav_path
 filename = STRCOMPRESS(sav_path + 'c_' + drs.date_obs + '_N' +  STRING(hdr_in[0].nod_id[0], FORMAT='(I03)') + '_' $
            +  hdr_in[0].flag[0] + '_' +  hdr_in[0].objname[0] + '_' + STRING(MIN(hdr_in.file_id), FORMAT='(I06)') + '-' +  $
            STRING(MAX(hdr_in.file_id), FORMAT='(I06)'), /REMOVE_ALL)
