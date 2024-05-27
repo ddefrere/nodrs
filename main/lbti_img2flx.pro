@@ -47,6 +47,7 @@
 ;   Version 3.2, 04-APR-2017, DD: Target information is now passed through the 'tgt' common
 ;   Version 3.3, 28-JUL-2017, DD: Implemented background floor mode
 ;   Version 3.4, 28-JUL-2018, DD: Now add the measured flux floor before background subtraction to the background floor
+;   Version 3.5, 27-MAY-2024, DD: Now make sure bck_orad has the same size as bck_irad
 
 PRO LBTI_IMG2FLX, img_in, hdr_in, LOG_FILE=log_file, INFO=info, NO_SAVE=no_save, PLOT=plot, OB_IN=ob_in, XCEN=xcen_in, YCEN=ycen_in
 
@@ -245,7 +246,10 @@ FOR i_img = 0, n_img-1 DO BEGIN
             -1: bck_orad = (CEIL(SQRT(aper_rad^2+bck_irad^2)) > (bck_irad + 2)) < y_down < y_up
             ; this will tell the flux computation routine to use this whole region for the background computation 
             -2: sky_lim  = [x_down, x_up, y_down, y_up]
-            ELSE: bck_orad = drs.bck_orad ;IF drs.bck_irad GT drs.bck_orad+1 THEN MESSAGE, 'The outer radius of the background region is two small compared to the inner radius'
+            ELSE: BEGIN 
+              bck_orad = drs.bck_orad ;IF drs.bck_irad GT drs.bck_orad+1 THEN MESSAGE, 'The outer radius of the background region is two small compared to the inner radius'
+              IF N_ELEMENTS(bck_orad) EQ 1 THEN bck_orad = REPLICATE(bck_orad, N_ELEMENTS(aper_rad))   
+            END
         ENDCASE
         ; If sky_col is set, make sure that bck_orad is at least bck_irad + aper_rad (but remain within channel)
         IF drs.sky_weight THEN bck_orad = ( bck_orad > (bck_irad + aper_rad)) < y_down < y_up
