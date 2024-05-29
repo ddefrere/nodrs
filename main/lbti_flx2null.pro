@@ -100,9 +100,9 @@ null_files = FILE_SEARCH(data_path,'*NULL.fits', COUNT=n_files)
 
 ; Create directories if non existent
 sav_fil_path = pth.l1fits_path + pth.sep + drs.date_obs + drs.dir_label + pth.sep + 'filtered' + pth.sep
-IF NOT FILE_TEST(sav_fil_path) THEN FILE_MKDIR, sav_fil_path & SPAWN, 'chmod 775 ' + sav_fil_path
+IF NOT FILE_TEST(sav_fil_path) THEN FILE_MKDIR, sav_fil_path & SPAWN, 'chmod -R 775 ' + sav_fil_path
 sav_int_path = pth.l1fits_path + pth.sep + drs.date_obs + drs.dir_label + pth.sep + 'intermediate' + pth.sep
-IF NOT FILE_TEST(sav_int_path) THEN FILE_MKDIR, sav_int_path & SPAWN, 'chmod 775 ' + sav_int_path
+IF NOT FILE_TEST(sav_int_path) THEN FILE_MKDIR, sav_int_path & SPAWN, 'chmod -R 775 ' + sav_int_path
 
 ; Return if no nulling files
 IF n_files EQ 0 THEN BEGIN
@@ -973,7 +973,7 @@ IF n_ok GT 0 THEN data = data[idx_ok]
 IF NOT KEYWORD_SET(no_save) THEN BEGIN  
   ; Create directories if non existent
   sav_path = pth.l1fits_path + pth.sep + drs.date_obs + drs.dir_label + pth.sep 
-  IF NOT FILE_TEST(sav_path) THEN FILE_MKDIR, sav_path & SPAWN, 'chmod 775 ' + sav_path        ; Create directory if it does not exist
+  IF NOT FILE_TEST(sav_path) THEN FILE_MKDIR, sav_path & SPAWN, 'chmod -R 775 ' + sav_path        ; Create directory if it does not exist
   
   ; If exist, archive it
   outfile = sav_path + 'UT' + drs.date_obs + '.fits'

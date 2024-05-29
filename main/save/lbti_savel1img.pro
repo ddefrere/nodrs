@@ -65,7 +65,7 @@ chp_id = REPLICATE(1, N_ELEMENTS(data_in.xcen_dx))             ; not used urrent
 
 ; Create output path if does not exist
 sav_path = pth.l1fits_path + pth.sep + drs.date_obs + drs.dir_label + pth.sep
-IF NOT FILE_TEST(sav_path) THEN FILE_MKDIR, sav_path & SPAWN, 'chmod 775 ' + sav_path
+IF NOT FILE_TEST(sav_path) THEN FILE_MKDIR, sav_path & SPAWN, 'chmod -R 775 ' + sav_path
 
 ; Define output file name
 id_string = '_ID' + STRING(file_id[0], FORMAT='(I03)') + '_'

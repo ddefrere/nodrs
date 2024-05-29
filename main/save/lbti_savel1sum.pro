@@ -47,7 +47,7 @@ COMMON GLOBAL, prm, cnf, wav, tgt, pth, drs, log
 IF NOT KEYWORD_SET(OUTFILE) THEN BEGIN
   ; Create directory
   sav_path = pth.l1fits_path + pth.sep + drs.date_obs + drs.dir_label + pth.sep
-  IF NOT FILE_TEST(sav_path) THEN FILE_MKDIR, sav_path & SPAWN, 'chmod 775 ' + sav_path
+  IF NOT FILE_TEST(sav_path) THEN FILE_MKDIR, sav_path & SPAWN, 'chmod -R 775 ' + sav_path
   ; Create file name
   outfile  = sav_path + 'UT' + drs.date_obs + '_SUM.fits'
 ENDIF
