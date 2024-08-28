@@ -48,6 +48,7 @@
 ;   Version 3.3, 28-JUL-2017, DD: Implemented background floor mode
 ;   Version 3.4, 28-JUL-2018, DD: Now add the measured flux floor before background subtraction to the background floor
 ;   Version 3.5, 27-MAY-2024, DD: Now make sure bck_orad has the same size as bck_irad
+;   Version 3.6, 27-AUG-2024, DD: Remove transition frames in the background data
 
 PRO LBTI_IMG2FLX, img_in, hdr_in, LOG_FILE=log_file, INFO=info, NO_SAVE=no_save, PLOT=plot, OB_IN=ob_in, XCEN=xcen_in, YCEN=ycen_in
 
@@ -168,14 +169,20 @@ FOR i=0, n_auxil-1 DO BEGIN
   ycen_all[*,i+idx] = ycen_in[i]
 ENDFOR
 
-; If null beam, only do closed-loop frames
+; If null beam, only do closed-loop frames for the NULL beam. For the background beam, skip the first 5 frames which are often transition frames (when the loop is open)
 IF hdr_in.header.obstype EQ 2 THEN BEGIN
+  ; Only keep closed-loop frames for nulling beam
   idx_skip = WHERE(hdr_in.data.dloopon NE 1 OR hdr_in.data.sloopon NE 1 OR hdr_in.data.pcclosed NE 1, n_rej, NCOMPLEMENT=n_ok)
   IF n_rej GE 1 THEN xcen_all[idx_skip,0] = 0  ; this will skip flux computation in the loop below (for NULL beam only!!! These frames will be used for background at other position)
   IF n_ok  LE 0 THEN BEGIN
-    MESSAGE, 'No closed-loop frames to process for this nod', /CONTINUE
+    MESSAGE, 'No closed-loop null frames to process for this nod', /CONTINUE
     RETURN
   ENDIF
+  ; Remove first ten open-loop transition frames for background beam. In recent data, we continue data acquisition when the loop is being closed and, sometimes, the star is still moving to the other quadrant.
+  ; This makes sure that the star has completely moved. 
+  idx10    = INDGEN(10)
+  idx_skip = WHERE(hdr_in[idx10].data.dloopon NE 1 OR hdr_in.data[idx10].sloopon NE 1 OR hdr_in[idx10].data.pcclosed NE 1, n_rej)
+  IF n_rej GE 1 THEN xcen_all[idx_skip,1] = 0  ; this will skip flux computation in the loop below (for the bckg beam only!!!)
 ENDIF
 
 ; If no valid position, skip
@@ -428,7 +435,7 @@ ENDIF
 ; Loop over beam positions
 IF NOT KEYWORD_SET(NO_SAVE) AND KEYWORD_SET(SAVE_ON) THEN BEGIN
   FOR i_b=0, n_beam-1 DO BEGIN
-    ; Only if beam poistion not 0
+    ; Only if beam position not 0
     IF MAX(star_pos[*,0,i_b]) THEN BEGIN
       ; Store beam ID
       hdr_in.header.beam_id = i_b  
