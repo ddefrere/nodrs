@@ -76,6 +76,7 @@
 ;   Version 6.0,  20-FEB-2024, DD: Added FRA_MODE to OB-restoration checking parameters
 ;   Version 6.1,  03-MAY-2024, DD: Now saved processed L1 files
 ;   Version 6.2,  24-MAY-2024, DD: Update file permission
+;   Version 6.2,  27-AUG-2024, DD: Moved up the computation of the mean background and save the corrected background as filtered file
 
 PRO LBTI_FLX2NULL, date, OB_IDX=ob_idx, INFO=info, LOG_FILE=log_file, NO_MULTI=no_multi, NO_SAVE=no_save, PLOT=plot, RENEW=renew         
 
@@ -420,7 +421,22 @@ FOR i_f = 0, n_files-1 DO BEGIN
       ENDIF
     ENDELSE
 
-    ; Save filtered L1 file
+    ; Remove mean value from background for NSC (if from different NODs, do it per NOD!)
+    nod_bckg_uniq = nod_bckg[UNIQ(nod_bckg,  SORT(nod_bckg))]
+    n_nod_bckg    = N_ELEMENTS(nod_bckg_uniq)
+    FOR ib = 0, n_nod_bckg-1 DO BEGIN
+      idx_nod_bckg = WHERE(nod_bckg EQ nod_bckg_uniq[ib])
+      AVGSDV, bck_tot_phot[idx_nod_bckg], bck_avg, tmp, tmp2, KAPPA=5
+      bck_tot_phot[idx_nod_bckg] = bck_tot_phot[idx_nod_bckg] - bck_avg   ; remove mean value for NSC fitting
+    ENDFOR
+
+    ; Plot corrected background
+    IF N_ELEMENTS(bck_tot_phot) GT 1 THEN BEGIN
+      time = REFORM(TRANSPOSE(data_bckg.mjd_obs-MIN(data_bckg.mjd_obs))*24.*60.*60.)     ; convert MJD to ellapsed seconds
+      PLOTALL, time, REFORM(bck_tot_phot), REFORM(bck_err_phot), NAME=plotnull, TAG='BCKG-COR', XTITLE='Elapsed time [s]', YTITLE='Background measurements [ADU]', TITLE='', /BOLD, /EPS
+    ENDIF
+
+    ; Save filtered L1 background file
     IF NOT KEYWORD_SET(no_save) THEN LBTI_SAVEL1FLX_1APER, data_bckg, hdr_bckg, id_aper, OB_ID=ob_id, TAG='BCKG'
    
     ; 4. Process and filter nulls
@@ -563,20 +579,7 @@ FOR i_f = 0, n_files-1 DO BEGIN
     
     ; Now compute NSC-related values and PLOT results
     ; -----------------------------------------------
-    
-    ; Remove mean value from background for NSC (if from different NODs, do it per NOD!)
-    nod_bckg_uniq = nod_bckg[UNIQ(nod_bckg,  SORT(nod_bckg))]
-    n_nod_bckg    = N_ELEMENTS(nod_bckg_uniq)
-    FOR ib = 0, n_nod_bckg-1 DO BEGIN
-      idx_nod_bckg = WHERE(nod_bckg EQ nod_bckg_uniq[ib])
-      AVGSDV, bck_tot_phot[idx_nod_bckg], bck_avg, tmp, tmp2, KAPPA=5
-      bck_tot_phot[idx_nod_bckg] = bck_tot_phot[idx_nod_bckg] - bck_avg   ; remove mean value for NSC fitting
-    ENDFOR
-    ; Plot corrected background
-    IF N_ELEMENTS(bck_tot_phot) GT 1 THEN BEGIN
-      time = REFORM(TRANSPOSE(data_bckg.mjd_obs-MIN(data_bckg.mjd_obs))*24.*60.*60.)     ; convert MJD to ellapsed seconds
-      PLOTALL, time, REFORM(bck_tot_phot), REFORM(bck_err_phot), NAME=plotnull, TAG='BCKG-COR', XTITLE='Elapsed time [s]', YTITLE='Background measurements [ADU]', TITLE='', /BOLD, /EPS
-    ENDIF
+  
     ; Now compute RMS over full sequence
     AVGSDV, bck_tot_phot, tmp, bck_rms, bck_rms_mean;, KAPPA=5
     ; Derive minimum possible astro NULL (defined arbitrary here as -1 sigma the background variation relative to peak)

@@ -16,6 +16,7 @@
 ; MODIFICATION HISTORY:
 ;   Version 1.0, 05-MAY-2024, by Denis Defrère, University of Arizona, denis@lbti.com
 ;   Version 1.1, 24-MAY-2024, DD: Update file permission
+;   Version 1.1, 28-AUG-2024, DD: Correctly save the nod ID
 
 PRO LBTI_SAVEL1FLX_1APER, data, header, aper_id, OUTFILE=outfile, OB_ID=ob_id, TAG=tag
 
@@ -28,7 +29,6 @@ obstype  = FXPAR(header, 'OBSTYPE', /NOCONTINUE)
 exptime  = FXPAR(header, 'EXPTIME', /NOCONTINUE)
 lam_cen  = FXPAR(header, 'WAVELENG', /NOCONTINUE)
 flag     = FXPAR(header, 'FLAG', /NOCONTINUE)
-nod_id   = FXPAR(header, 'NOD_ID', /NOCONTINUE)
 IF NOT KEYWORD_SET(OB_ID) THEN ob_id = FXPAR(header, 'OB_ID', /NOCONTINUE)
 
 ; Get data type
@@ -40,6 +40,7 @@ ENDIF
 
 ; Prepare data
 raw_id     = LONG(data.file_id)
+nod_id     = FIX(data_bckg.nod_id)
 xcen       = FLOAT(data.xcen)
 ycen       = FLOAT(data.ycen)
 fwhm       = FLOAT(data.fwhm)
