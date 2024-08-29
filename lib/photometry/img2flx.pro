@@ -123,7 +123,7 @@ PRO IMG2FLX, img_in, BCK_METHOD=bck_method, FLX_METHOD=flx_method, APER_RAD=aper
         ; Because the pixels are correlated per column (at least for NOMIC), don't use APER anymore but define the background region as the pixels directly above and below the the star.
         ;APER, img_in, xcen, ycen, flx_tot0, flx_err0, bck_flx0, bck_err0, phpadu, [aper_rad[i_aper]], [bck_irad,bck_orad], good_range, /FLUX, /SILENT, /EXACT, /MEANBACK
         APER_WEIGHT, img_in, xcen, ycen, flx_tot0, flx_err0, bck_flx0, bck_err0, phpadu, [aper_rad[i_aper]], [bck_irad[i_aper],bck_orad[i_aper]], good_range, CLIPSIG=5, SKYLIM=sky_lim, $
-                     NSKY=n_bck, SKY_COL=sky_col, SKY_WEIGHT=sky_weight, WEIGHT=flx_method, FWHM=psf_fwhm, MEANBACK=ABS(bck_method-1), /FLUX, /SILENT, /EXACT ;(tests show that /MEANBACK gives the best results)
+                     NSKY=n_bck, SKY_COL=sky_col, SKY_WEIGHT=sky_weight, WEIGHT=flx_method, FWHM=psf_fwhm, MEANBACK=ABS(bck_method-1),SETSKYVAL=1D-14, /FLUX, /SILENT, /EXACT ;(tests show that /MEANBACK gives the best results)
       ENDIF ELSE BEGIN
         ; Compute the array where each value is its distance to xcen, ycen
         DIST_CIRCLE, dist_map, [n_xpix,n_ypix], xcen, ycen, /DOUBLE
