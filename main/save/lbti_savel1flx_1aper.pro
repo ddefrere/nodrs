@@ -79,7 +79,6 @@ IF TAG_EXIST(data, 'fpcpistm') THEN BEGIN
 ENDIF  
 
 ; Number of elements and aperture radii
-nod_id = REPLICATE(nod_id, N_ELEMENTS(raw_id))
 chp_id = REPLICATE(1, N_ELEMENTS(raw_id)) ; not used currently
 
 ; Now add the right aperture
