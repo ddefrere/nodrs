@@ -40,7 +40,7 @@ ENDIF
 
 ; Prepare data
 raw_id     = LONG(data.file_id)
-nod_id     = FIX(data_bckg.nod_id)
+nod_id     = FIX(data.nod_id)
 xcen       = FLOAT(data.xcen)
 ycen       = FLOAT(data.ycen)
 fwhm       = FLOAT(data.fwhm)
