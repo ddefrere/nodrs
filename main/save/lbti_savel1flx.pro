@@ -381,7 +381,7 @@ pro LBTI_SAVEL1FLX, flx_in, hdr_in, data_in, outfile = outfile, file_id = file_i
     FXBADDCOL, 28l, hdr, 0., 'PCPHSTD', 'RMS measured piston', tunit = 'um'
     FXBADDCOL, 29l, hdr, 0., 'PCPHMCOS', 'Mean cosinus(phi) over the last X ms'
     FXBADDCOL, 30l, hdr, 0., 'PCPHMSIN', 'Mean sinus(phi) over the last X ms'
-    FXBADDCOL, 31l, hdr, 0, 'PCFJMPS', 'Number of CG jumps over the last X ms'
+    FXBADDCOL, 31l, hdr, 0l, 'PCFJMPS', 'Number of CG jumps over the last X ms'
     FXBADDCOL, 32l, hdr, 0., 'PCMSNR', 'K-band FFT-peak SNR'
     FXBADDCOL, 33l, hdr, 0., 'PCPHMEAN2', 'Average measured piston', tunit = 'um'
     FXBADDCOL, 34l, hdr, 0., 'PCPHSTD2', 'RMS measured piston', tunit = 'um'
@@ -396,7 +396,7 @@ pro LBTI_SAVEL1FLX, flx_in, hdr_in, data_in, outfile = outfile, file_id = file_i
     then FXBWRITM, unit, col, raw_id, mjd_obs, fix(nod_id), fix(chp_id), float(xcen), float(ycen), float(fwhm), float(slrms), $
       transpose(bckg_meas), transpose(bckg_err), transpose(flx_tot), transpose(flx_err), transpose(bckg_meas2), transpose(bckg_err2), $
       transpose(flx_tot2), transpose(flx_err2), pcplsp, pctipsp, pctltsp, spdthpos, fpcpistm, $
-      fpcpists, fpcazm, fpcelm, fpcazs, fpcels, pcphmean, pcphstd, pcphmcos, pcphmsin, fix(pcfjmps), pcmsnr, pcphmean2, pcphstd2, $
+      fpcpists, fpcazm, fpcelm, fpcazs, fpcels, pcphmean, pcphstd, pcphmcos, pcphmsin, long(pcfjmps), pcmsnr, pcphmean2, pcphstd2, $
       pcphmcos2, pcphmsin2, pcmsnr2 $
     else FXBWRITM, unit, col, raw_id, mjd_obs, fix(nod_id), fix(chp_id), float(xcen), float(ycen), float(fwhm), float(slrms), $
       transpose(bckg_meas), transpose(bckg_err), transpose(flx_tot), transpose(flx_err), transpose(bckg_meas2), transpose(bckg_err2), $
