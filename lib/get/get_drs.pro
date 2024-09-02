@@ -1,6 +1,6 @@
 ;+
 ; NAME: GET_DRS
-; 
+;
 ; PURPOSE:
 ;   Initializes reduction paramaters (based on output config files)
 ;
@@ -27,7 +27,7 @@
 ;                       - 3: Background subtraction performed using the dedicated background frames in the same pointing (i.e., those flagged with an obstype of 3).
 ;                       - 4: For chopping, not yet implemented
 ;     - BCKG_SEL   :  Background selection mode when N_FRBCK is not null (0: time, 1: elevation, 2: central value)
-;     - BFL_MODE   :  Background floor mode for the background annulus (0: sigma-clipped mean, 1: median). 
+;     - BFL_MODE   :  Background floor mode for the background annulus (0: sigma-clipped mean, 1: median).
 ;     - BIAS_ESTIM :  Compute the flux in a nearby empty region of the detector
 ;     - CAL_METHOD :  Interpolation method for the transfer function
 ;                     - set keyword to 0 for linear interpolation between nearest neighbour (default)
@@ -80,7 +80,7 @@
 ;                       - 0: Default mode. Used the mode of the null distribituion.
 ;                       - 1: Computed the weighted average of the best NULL_RATIO frames
 ;                       - 2: Statistical reduction (not yer connected but working separately with the L1 files)
-;     - NULL_RANGE ;  Source null range (to scan with NSC) 
+;     - NULL_RANGE ;  Source null range (to scan with NSC)
 ;     - NULL_RAD   :  Photometric aperture radius used for null computation (closest to value defined for flux computation, in pixels)
 ;     - PARA_BIN   ;  Parallactic angle used to bin the images before PCA/ADI processing
 ;     - PARA_RANGE ;  Range of parallactic angle to preserve before PCA/ADI processing
@@ -109,7 +109,8 @@
 ;     - SKIP_OPEN  ;  Don't read open-loop frames (when appropriate). Not always a good idea (e.g., used for background subtraction)
 ;     - SKIP_REG   :  Don't register the frames (beam center computed only for tip/tilt information)
 ;     - SKIP_VIS   :  To turn off visibility computation
-;     - SKY_WEIGHT :  Set to 1 in order to weight the number of pixels per column in the background region according to the corresponding number of pixels in the photometric aperture. 
+;     - SKY_OFF    :  Set to 1 to turn off the background annulus subtraction
+;     - SKY_WEIGHT :  Set to 1 in order to weight the number of pixels per column in the background region according to the corresponding number of pixels in the photometric aperture.
 ;     - SPLIT_DITH ; Set to 1 to split the OB if different dither patterns are found
 ;     - SPLIT_NOD  :  Calibrate each nod position separately
 ;     - SPLIT_TF   :  Set to 1 to split the TF when there is a dead time longer than time_split between two null measurements
@@ -117,28 +118,30 @@
 ;     - SPLIT_TIME :  Maximum dead time between two null measurements for a single TF (hours)
 ;     - XCEN       :  Two-element vector with the X coordinate of the star on the detector [pixels] (one element for each side -- superseed the automatic computation)
 ;     - YCEN       :  Two-element vector with the Y coordinate of the star on the detector [pixels] (one element for each side -- superseed the automatic computation)
-;     - X_RANGE    :  Range of X detector positions to preserve during ADI frame selection (in pixels) 
-;     - Y_RANGE    :  Range of Y detector positions to preserve during ADI frame selection (in pixels) 
+;     - X_RANGE    :  Range of X detector positions to preserve during ADI frame selection (in pixels)
+;     - Y_RANGE    :  Range of Y detector positions to preserve during ADI frame selection (in pixels)
 ;
 ; MODIFICATION HISTORY:
 ;   Version 1.0,  16-FEB-2015, by Denis Defrère, Steward Observatory (ddefrere@email.arizona.edu)
 ;   Version 1.1,  12-MAR-2015, DD: format output to be compliant with NexSci archiv
 ;   Version 1.2,  12-DEC-2015, DD: improved comments to reflect better the config files
 ;   Version 1.3,  28-JUL-2017, DD: added BFL_MODE
+;   Version 1.3,  02-SEP-2024, DD: added SKY_OFF
+;
+pro GET_DRS, drs, cfg_file
+  compile_opt idl2
 
-PRO GET_DRS, drs, cfg_file
+  ; Read file
+  drs = READ_CONFIG(cfg_file)
 
-; Read file
-drs = READ_CONFIG(cfg_file)
+  ; Append instrument name
+  struct_add_field, drs, 'instrum', 'tmp'
+  if drs.lmircam eq 1 then drs.instrum = 'lmircam'
+  if drs.mirac eq 1 then drs.instrum = 'mirac'
+  if drs.nomic eq 1 then drs.instrum = 'nomic'
 
-; Append instrument name
-struct_add_field, drs, 'instrum', 'tmp'
-IF drs.lmircam EQ 1 THEN drs.instrum = 'lmircam'
-IF drs.mirac   EQ 1 THEN drs.instrum = 'mirac'
-IF drs.nomic   EQ 1 THEN drs.instrum = 'nomic'
-
-; Backward compatibility
-IF NOT TAG_EXIST(drs, 'max_time') THEN struct_add_field, drs, 'max_time', 10
-IF NOT TAG_EXIST(drs, 'bfl_mode') THEN struct_add_field, drs, 'bfl_mode', 0
-
-END
+  ; Backward compatibility
+  if not TAG_EXIST(drs, 'max_time') then struct_add_field, drs, 'max_time', 10
+  if not TAG_EXIST(drs, 'bfl_mode') then struct_add_field, drs, 'bfl_mode', 0
+  if not TAG_EXIST(drs, 'sky_off') then struct_add_field, drs, 'sky_off', 0
+end
