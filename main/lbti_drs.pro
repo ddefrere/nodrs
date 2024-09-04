@@ -1,14 +1,14 @@
 ;+
 ; NAME: LBTI_DRS
-;                                                                                               
+;
 ; PURPOSE
 ;   Main procedure to reduce LBTI data.
 ;
 ; MANDATORY INPUTS
 ;   date          :  String with the UT date to be reduced based on the format 'yymmdd' (e.g., '130524')
 ;   cfg_file      :  String with the name of the config file with the reduction parameters
-; 
-; OPTIONAL INPUT KEYWORDS 
+;
+; OPTIONAL INPUT KEYWORDS
 ;   BAD_IDX       :  Vector with the file number of frames to be removed
 ;   BCKG_IDX      :  Two-element vector with the lower and the upper file numbers of the background files (e.g., [10,19]). Generally used when BCKG_MODE = 4.
 ;   DARK_IDX      :  Two-element vector with the lower and the upper file numbers of the dark files (e.g., [0,9])
@@ -20,11 +20,11 @@
 ;   BCKG_PATH     :  String vector pointing to the the path of background data (superseed bckg_idx keyword)
 ;   DARK_PATH     :  String vector pointing to the the path of dark data (superseed dark_idx keyword)
 ;   FLAT_PATH     :  String vector pointing to the the path of flat data (superseed flat_idx keyword)
-;   
+;
 ; RUNNING INPUT KEYWORDS
 ;   MASTERLOG     :  Set this keyword to force the creation of new masterlog file
 ;   RENEW         :  Set this keyword to force the code to create a new file (e.g., darks, flats, l0_fits, l1_fits, ...).
-;                 :  Otherwise, the code doesn't process the data if the appropriate intermediate file already exists (with the same reduction parameters) 
+;                 :  Otherwise, the code doesn't process the data if the appropriate intermediate file already exists (with the same reduction parameters)
 ;   SKIP_ADI      :  Set to skip ADI processing (superseed the value in the cnfig file)
 ;   SKIP_FLX      :  Set to skip flux computation (files restored from disk, superseed the value in the config file)
 ;   SKIP_NULL     :  Set to skip null computation (superseed the value in the cnfig file)
@@ -43,11 +43,11 @@
 ;   1. Up-to-date Astrolib (http://idlastro.gsfc.nasa.gov/)
 ;   2. Astrolib now requires the Coyote library :-/ (http://www.idlcoyote.com/programs/zip_files/coyoteprograms.zip )
 ;   3. Several Gb of free disk storage to reduce a typical HOSTS night (10000 256x256 frames uses 5 Gb)
-;        
+;
 ; CALLING SEQUENCE
 ;   LBTI_DRS, '132706', 'hosts.cfg', /VERBOSE
 ;   or LBTI_DRS, '132706', 'hosts.cfg', DATA_IDX=[100,8000], /VERBOSE
-;      
+;
 ; MODIFICATION HISTORY:
 ;   Version 1.0, 17-APR-2013, by Denis Defrère, University of Arizona, ddefrere@email.arizona.edu
 ;   Version 1.1, 02-MAY-2013, DD: Enabled GPU detection and added keyword 'NO_GPU' to prevent GPU use
@@ -67,18 +67,18 @@
 ;   Version 2.5, 21-NOV-2013, DD: Renamed keyword METHOD to FLX_METHOD and added keyword FIT_METHOD
 ;   Version 2.6, 24-NOV-2013, DD: Added keyword OFFSET
 ;   Version 2.7, 13-JAN-2014, DD: Implemented masterlog file and incremental read of the L0 data files
-;   Version 2.8, 14-JAN-2014, DD: Modified the use of the OBSTYPE keyword and implemented XCEN/YCEN as two-element vectors 
+;   Version 2.8, 14-JAN-2014, DD: Modified the use of the OBSTYPE keyword and implemented XCEN/YCEN as two-element vectors
 ;   Version 2.9, 15-JAN-2014, DD: Added keyword MASTERLOG to force the creation of a new masterlog file
 ;   Version 3.0, 07-FEB-2014, DD: Removed obsolote filter keywords and improved speed of image calibration
 ;   Version 3.1, 23-FEB-2014, DD: Splitted background subtraction and frame centering
 ;   Version 3.2, 13-MAR-2014, DD: Replaced NO_OVERLAP by OVERLAP
-;   Version 3.3, 13-APR-2014, DD: Implemented incremental reduction for null computation 
+;   Version 3.3, 13-APR-2014, DD: Implemented incremental reduction for null computation
 ;   Version 3.4, 23-MAY-2014, DD: Added keyword BCKG_MODE and SKIP_FLX
 ;   Version 3.5, 25-MAY-2014, DD: Added keyword NULL_MODE and NULL_RATIO
 ;   Version 4.0, 27-MAY-2014, DD: Now compute flux per pointing to avoid producing too large data cube when reducing all data at once
 ;   Version 4.1, 29-MAY-2014, DD: Added keyword N_FRBCK
 ;   Version 4.2, 17-SEP-2014, DD: Added keyword NO_FLAT and NO_DARK + removed NO_GPU
-;   Version 5.0, 18-SEP-2014, DD: Completely new implementation of intermediate L0 files. 
+;   Version 5.0, 18-SEP-2014, DD: Completely new implementation of intermediate L0 files.
 ;   Version 5.1, 24-SEP-2014, DD: Added keyword ADI_MODE, SKIP_ADI and SKIP_NULL
 ;   Version 5.2, 26-SEP-2014, DD: Added keyword N_TRANS
 ;   Version 5.3, 14-OCT-2014, DD: Added keywords VISI_RATIO, RIN_INIT, SIG_FLX, SIG_POS, SIG_PL, SIG_VIS, and N_COADD
@@ -105,9 +105,9 @@
 ;   Version 7.4, 16-SEP-2015, DD: Now also save pure background intermediate L0 files (obstype=3)
 ;   Version 7.5, 02-OCT-2015, DD: Added keyword OB_IDX
 ;   Version 7.6, 29-OCT-2015, DD: Now read the config ID from the masterlog file
-;   Version 7.7, 15-NOV-2015, DD: Updated call to GET_CNF and DECLARE_PATH  
-;   Version 7.8, 27-NOV-2015, DD: Now use the elevation rather than the time with BCKG_MODE=3 
-;   Version 7.9, 02-DEC-2015, DD: Cleaned up code (version released to NexSCI) 
+;   Version 7.7, 15-NOV-2015, DD: Updated call to GET_CNF and DECLARE_PATH
+;   Version 7.8, 27-NOV-2015, DD: Now use the elevation rather than the time with BCKG_MODE=3
+;   Version 7.9, 02-DEC-2015, DD: Cleaned up code (version released to NexSCI)
 ;   Version 8.0, 22-DEC-2015, DD: Included call to LBTI_READMASTERLOG + modified call to LBTI_READDATA + improved memory usage
 ;   Version 8.1, 26-MAR-2016, DD: Corrected bug with bad pixel map computation + added keyword RENEW + modified call to LBTI_READDATA
 ;   Version 8.2, 28-APR-2016, DD: Improved bad pixel map and flat computation
@@ -125,871 +125,870 @@
 ;   Version 9.4, 10-AUG-2020, DD: Now do not limit the aperture size in the X direction when drs.sky_col is set to 1
 ;   Version 9.5, 15-OCT-2023, DD: Updated for FRA_MODE=2 (i.e., PCA background subtraction)
 
-PRO LBTI_DRS, date, cfg_file, $                                                                                                               ; Mandatory inputs (date and config file)
-              BAD_IDX=bad_idx, BCKG_IDX=bckg_idx, DARK_IDX=dark_idx, DATA_IDX=data_idx,  FLAT_IDX=flat_idx, NOD_IDX=nod_idx, OB_IDX=ob_idx, $ ; Optional inputs (file index, superseed keywords)
-              DATA_PATH=data_path, BCKG_PATH=bckg_path, DARK_PATH=dark_path, FLAT_PATH=flat_path, $                                           ; Optional inputs (file path, superseed "*_idx" keywords)
-              MASTERLOG=masterlog, RENEW=renew, SKIP_ADI=skip_adi, SKIP_FLX=skip_flx, SKIP_NULL=skip_null, SKIP_RED=skip_red,$                ; Running keywords
-              LOG_FILE=log_file, NO_MULTI=no_multi, NO_SAVE=no_save, PLOT=plot, VERBOSE=verbose                                               ; Control outputs
+pro LBTI_DRS, date, cfg_file, $ ; Mandatory inputs (date and config file)
+  bad_idx = bad_idx, bckg_idx = bckg_idx, dark_idx = dark_idx, data_idx = data_idx, flat_idx = flat_idx, nod_idx = nod_idx, ob_idx = ob_idx, $ ; Optional inputs (file index, superseed keywords)
+  data_path = data_path, bckg_path = bckg_path, dark_path = dark_path, flat_path = flat_path, $ ; Optional inputs (file path, superseed "*_idx" keywords)
+  masterlog = masterlog, renew = renew, skip_adi = skip_adi, skip_flx = skip_flx, skip_null = skip_null, skip_red = skip_red, $ ; Running keywords
+  log_file = log_file, no_multi = no_multi, no_save = no_save, plot = plot, verbose = verbose ; Control outputs
+  compile_opt idl2
 
-  
-; DEFINE GLOBAL PARAMETERS
-; ************************
-; Global parameters are grouped together into structures, defined hereafter.
-; The advantages of using structures for global variables is:
-; a. They are easily modified or extended, via the routine in which they are defined, without the need to update the common blocks
-; b. Once defined, array length and type of tags are protected, only their value may be modified in the code
-; c. It is difficult to modify the value inadvertently, since local variables and global variables are clearly distinguishable:
-;    after definition a global variable is accessible as: 'structure_name.variable_name'
-; The different structures are:
-; - prm:  invariable astronomical and physical parameters
-; - cnf:  parameters defining the instrumental configuration
-; - wav:  parameters pertaining to the propagation and detection of light waves in the array
-; - tgt:  parameters defining the target star and planetary system components
-; - pth:  parameters defining the data and result paths
-; - drs:  parameters related to data reduction (extracted from the config file)
-; - log:  information contained in the masterlog
+  ; DEFINE GLOBAL PARAMETERS
+  ; ************************
+  ; Global parameters are grouped together into structures, defined hereafter.
+  ; The advantages of using structures for global variables is:
+  ; a. They are easily modified or extended, via the routine in which they are defined, without the need to update the common blocks
+  ; b. Once defined, array length and type of tags are protected, only their value may be modified in the code
+  ; c. It is difficult to modify the value inadvertently, since local variables and global variables are clearly distinguishable:
+  ; after definition a global variable is accessible as: 'structure_name.variable_name'
+  ; The different structures are:
+  ; - prm:  invariable astronomical and physical parameters
+  ; - cnf:  parameters defining the instrumental configuration
+  ; - wav:  parameters pertaining to the propagation and detection of light waves in the array
+  ; - tgt:  parameters defining the target star and planetary system components
+  ; - pth:  parameters defining the data and result paths
+  ; - drs:  parameters related to data reduction (extracted from the config file)
+  ; - log:  information contained in the masterlog
 
-COMMON GLOBAL, prm, cnf, wav, tgt, pth, drs, log
-ON_ERROR, 0
+  common GLOBAL, prm, cnf, wav, tgt, pth, drs, log
+  on_error, 0
 
-; DEFINE GLOBAL VARIABLES
-; ***********************
+  ; DEFINE GLOBAL VARIABLES
+  ; ***********************
 
-; Astronomical and physical constants
-GET_PRM, prm
+  ; Astronomical and physical constants
+  GET_PRM, prm
 
-; Read config file with reduction parameters
-GET_DRS, drs, 'nodrs/cfg/' + cfg_file
+  ; Read config file with reduction parameters
+  GET_DRS, drs, 'nodrs/cfg/' + cfg_file
 
-; Obtain instrumental paramaters
-GET_CNF, cnf, INSTRUM=drs.instrum
+  ; Obtain instrumental paramaters
+  GET_CNF, cnf, instrum = drs.instrum
 
-; Recover the IDL running path
-DECLARE_PATH, pth, INSTRUM=drs.instrum, PATH_FILE=drs.path_file
+  ; Recover the IDL running path
+  DECLARE_PATH, pth, instrum = drs.instrum, path_file = drs.path_file
 
+  ; KEYWORD AND INPUT SANITY CHECK
+  ; ******************************
 
-; KEYWORD AND INPUT SANITY CHECK 
-; ******************************
+  ; Critical parameters
+  if strlen(date) ne 6 and not keyword_set(data_path) then message, 'Invalid input date: must be composed of 6 digits'
+  if not keyword_set(data_path) then data_path = pth.root_data + date + pth.sep
+  pth.data_path = data_path
 
-; Critical parameters
-IF STRLEN(date) NE 6 AND NOT KEYWORD_SET(DATA_PATH) THEN MESSAGE, 'Invalid input date: must be composed of 6 digits'
-IF NOT KEYWORD_SET(DATA_PATH) THEN data_path = pth.root_data + date + pth.sep 
-pth.data_path = data_path
+  ; Keywords
+  if keyword_set(skip_adi) then drs.skip_adi = 1
+  if keyword_set(skip_flx) then drs.skip_flx = 1
+  if keyword_set(skip_null) then drs.skip_null = 1
+  if keyword_set(skip_red) then drs.skip_red = 1
+  if not keyword_set(plot) then plot = 0
+  if keyword_set(verbose) then info = verbose $
+  else info = 0
 
-; Keywords
-IF KEYWORD_SET(SKIP_ADI)  THEN drs.skip_adi  = 1
-IF KEYWORD_SET(SKIP_FLX)  THEN drs.skip_flx  = 1
-IF KEYWORD_SET(SKIP_NULL) THEN drs.skip_null = 1
-IF KEYWORD_SET(SKIP_RED)  THEN drs.skip_red  = 1
-IF NOT KEYWORD_SET(PLOT)  THEN plot          = 0
-IF KEYWORD_SET(VERBOSE)   THEN info          = verbose $
-                          ELSE info          = 0
+  ; Reformat input date for later
+  date_obs = '20' + strmid(date, 0, 2) + '-' + strmid(date, 2, 2) + '-' + strmid(date, 4, 2)
 
-; Reformat input date for later
-date_obs = '20' + STRMID(date, 0, 2) + '-' + STRMID(date, 2, 2) + '-' + STRMID(date, 4, 2)
+  ; Parse additional info to drs structure
+  drs = create_struct(drs, 'VERSION', 9.5, 'DATE', '15-OCT-2023', 'DATE_OBS', date_obs)
 
-; Parse additional info to drs structure
-drs = CREATE_STRUCT(drs, 'VERSION', 9.5, 'DATE', '15-OCT-2023', 'DATE_OBS', date_obs)
+  ; INITIALIZE LOG AND TERMINAL OUTPUT
+  ; **********************************
 
+  ; First output is a version number of the current code
+  if info gt 0 then begin
+    print, ' '
+    print, 'Nodrs - Version ' + string(drs.version, format = '(F3.1)') + ' -- ' + drs.date + ' -- Denis Defrère - Steward Observatory (denis@lbti.org)'
+    print, 'Data processed on ' + systime()
+    print, ' '
+  endif
 
-; INITIALIZE LOG AND TERMINAL OUTPUT
-; **********************************
+  ; Print also the version number in the log file (one file per date in which the results of different reduction are appended)
+  if keyword_set(log_file) then begin
+    ; Log directory will be the same as the one with the L1 files
+    if max(drs.aper_rad) ne 0 then tmp_label = '_APR' else tmp_label = ''
+    log_dir = pth.l1Fits_path + pth.sep + date_obs + drs.dir_label + tmp_label + pth.sep
+    if not file_test(log_dir) then file_mkdir, log_dir
+    ; Create log file
+    log_file = log_dir + date_obs + '.txt'
+    openw, lun, log_file, /get_lun, width = 800, /append
+    printf, lun, ' '
+    printf, lun, '******************************************************************************************************* '
+    printf, lun, ' '
+    printf, lun, 'Nodrs - Version ' + string(drs.version, format = '(F3.1)') + ' -- ' + drs.date + ' -- Denis Defrère - Steward Observatory (denis@lbti.org)'
+    printf, lun, 'Data processed on ' + systime()
+    printf, lun, ' '
+    printf, lun, '******************************************************************************************************* '
+    printf, lun, ' '
+  endif else lun = -1
 
-; First output is a version number of the current code
-IF info GT 0 THEN BEGIN
-  PRINT,' '
-  PRINT,'Nodrs - Version ' + STRING(drs.version, FORMAT='(F3.1)') +  ' -- ' + drs.date + ' -- Denis Defrère - Steward Observatory (denis@lbti.org)'
-  PRINT,'Data processed on '+ SYSTIME()
-  PRINT,' '
-ENDIF
+  ; READ OR CREATE MASTERLOG FILE
+  ; *****************************
 
-; Print also the version number in the log file (one file per date in which the results of different reduction are appended)
-IF KEYWORD_SET(log_file) THEN BEGIN
-  ; Log directory will be the same as the one with the L1 files
-  IF MAX(drs.aper_rad) NE 0 THEN tmp_label = '_APR' ELSE tmp_label = ''
-  log_dir  = pth.l1fits_path + pth.sep + date_obs + drs.dir_label + tmp_label + pth.sep
-  IF NOT FILE_TEST(log_dir) THEN FILE_MKDIR, log_dir
-  ; Create log file
-  log_file =  log_dir + date_obs + '.txt'
-  OPENW, lun, log_file, /GET_LUN, WIDTH=800, /APPEND
-  PRINTF,lun, ' '
-  PRINTF,lun, '******************************************************************************************************* '
-  PRINTF,lun, ' '
-  PRINTF,lun, 'Nodrs - Version ' + STRING(drs.version, FORMAT='(F3.1)') +  ' -- ' + drs.date + ' -- Denis Defrère - Steward Observatory (denis@lbti.org)'
-  PRINTF,lun, 'Data processed on '+ SYSTIME()
-  PRINTF,lun, ' '
-  PRINTF,lun, '******************************************************************************************************* '
-  PRINTF,lun, ' '
-ENDIF ELSE lun = -1
+  ; Skipped if processing nulling data right away
+  if drs.skip_adi eq 0 or drs.skip_red eq 0 then begin
+    ; --- Create masterlog file if necessary
+    mlog_file = data_path + 'masterlog.dat'
+    if not file_test(mlog_file) or keyword_set(masterlog) then begin
+      if file_test(data_path + 'config_id.dat') then file_delete, data_path + 'config_id.dat' ; Delete config ID file to tell LBTI_MASTERLOG to create new one
+      if file_test(data_path + 'nod_id.dat') then file_delete, data_path + 'nod_id.dat' ; Delete nod ID file to tell LBTI_MASTERLOG to create new one
+      print, '  Creating new masterlog file. This may take a while...'
+      LBTI_MASTERLOG, data_path, /idl
+    endif else if file_test(mlog_file) then LBTI_MASTERLOG, data_path, /append, /idl
 
+    ; --- Run consistancy check on the masterlog (now done separately)
+    ; LBTI_FIXDATA, data_path
 
-; READ OR CREATE MASTERLOG FILE
-; *****************************
+    ; --- Read masterlog file
+    LBTI_READMASTERLOG, mlog_file, log, bad_idx = bad_idx, bckg_idx = bckg_idx, dark_idx = dark_idx, flat_idx = flat_idx, nod_idx = nod_idx
 
-; Skipped if processing nulling data right away
-IF drs.skip_adi EQ 0 OR drs.skip_red EQ 0 THEN BEGIN
-  
-  ; --- Create masterlog file if necessary
-  mlog_file = data_path + 'masterlog.dat'
-  IF NOT FILE_TEST(mlog_file) OR KEYWORD_SET(MASTERLOG) THEN BEGIN
-    IF FILE_TEST(data_path + 'config_id.dat') THEN FILE_DELETE, data_path + 'config_id.dat'  ; Delete config ID file to tell LBTI_MASTERLOG to create new one
-    IF FILE_TEST(data_path + 'nod_id.dat')    THEN FILE_DELETE, data_path + 'nod_id.dat'     ; Delete nod ID file to tell LBTI_MASTERLOG to create new one
-    PRINT, '  Creating new masterlog file. This may take a while...'
-    LBTI_MASTERLOG, data_path, /IDL
-  ENDIF ELSE IF FILE_TEST(mlog_file) THEN LBTI_MASTERLOG, data_path, /APPEND, /IDL
-  
-  ; --- Run consistancy check on the masterlog (now done separately)
-  ;  LBTI_FIXDATA, data_path
-  
-  ; --- Read masterlog file
-  LBTI_READMASTERLOG, mlog_file, log, BAD_IDX=bad_idx, BCKG_IDX=bckg_idx, DARK_IDX=dark_idx, FLAT_IDX=flat_idx, NOD_IDX=nod_idx
-     
-  ; --- Flag out bad frames
-  idx_bad = WHERE(log.flag EQ 'B', n_b)
-  IF n_b GT 0 THEN log.bad_id[idx_bad] = 1
-  
-  ; --- Flag out transition frames
-  IF drs.n_trans THEN BEGIN
-    idx_trans = WHERE(log.nod_id NE SHIFT(log.nod_id, 1))
-    FOR i_trans = 0, drs.n_trans-1 DO log.bad_id[idx_trans+i_trans] = 1
-  ENDIF
-  
-  ; --- Flag open-loop frames to be removed (AO and phase loops where appropriate. Keep background frames, i.e. obstype = 3)
-  IF drs.skip_open THEN BEGIN
-    idx_open = WHERE(log.flag EQ 'O' AND log.obstype NE 3, n_o)
-    IF n_o GT 0 THEN log.bad_id[idx_open] = 1
-  ENDIF
-  
-  ; --- Plot diagnostic info
-  IF plot GT 0 THEN BEGIN
-    result_path = pth.result_path + pth.sep + 'diagnostic' + pth.sep + 'background' + pth.sep + date_obs + pth.sep
-    IF NOT FILE_TEST(result_path) THEN FILE_MKDIR, result_path
-    PLOTALL, log.file_id, log.lbtalt, 0, NAME=result_path + date + '-elevation_vs_file-id', XTITLE='Target file number', YTITLE='Telescope elevation [deg]', /BOLD, /NO_FFT, /NO_HISTO, /EPS
-    PLOTALL, log.file_id, log.cv, 0, NAME=result_path + date + '-cv_vs_file-id', XTITLE='Target file number', YTITLE='Central value [ADU]', /BOLD, /NO_FFT, /NO_HISTO, /EPS
-  ENDIF
-ENDIF
+    ; --- Flag out bad frames
+    idx_bad = where(log.flag eq 'B', n_b)
+    if n_b gt 0 then log.bad_id[idx_bad] = 1
 
+    ; --- Flag out transition frames
+    if drs.n_trans then begin
+      idx_trans = where(log.nod_id ne shift(log.nod_id, 1))
+      for i_trans = 0, drs.n_trans - 1 do log.bad_id[idx_trans + i_trans] = 1
+    endif
 
-; 1a. READ AND SAVE CALBRATION IMAGES (BPM, DARK, and FLAT)
-; *********************************************************
+    ; --- Flag open-loop frames to be removed (AO and phase loops where appropriate. Keep background frames, i.e. obstype = 3)
+    if drs.skip_open then begin
+      idx_open = where(log.flag eq 'O' and log.obstype ne 3, n_o)
+      if n_o gt 0 then log.bad_id[idx_open] = 1
+    endif
 
-; --- Skip calibration if requested and restore the calibrated L0 file from disk
-t0 = SYSTIME(1)
-IF drs.skip_red EQ 1 THEN BEGIN
-  IF info GT 0 THEN PRINT, '1. Restoring calibrated L0 images from disk.'
-  GOTO, skip_imgcal
-ENDIF ELSE IF info GT 0 THEN PRINT, '1. Reading and calibrating L0 data.'
-IF info GT 0 THEN PRINT, ' '
+    ; --- Plot diagnostic info
+    if plot gt 0 then begin
+      result_path = pth.result_path + pth.sep + 'diagnostic' + pth.sep + 'background' + pth.sep + date_obs + pth.sep
+      if not file_test(result_path) then file_mkdir, result_path
+      PLOTALL, log.file_id, log.lbtalt, 0, name = result_path + date + '-elevation_vs_file-id', xtitle = 'Target file number', ytitle = 'Telescope elevation [deg]', /bold, /no_fft, /no_histo, /eps
+      PLOTALL, log.file_id, log.cv, 0, name = result_path + date + '-cv_vs_file-id', xtitle = 'Target file number', ytitle = 'Central value [ADU]', /bold, /no_fft, /no_histo, /eps
+    endif
+  endif
 
-; --- Create master BPM, DRK, FLAT, and LIN files
-IF drs.no_bpm NE 1 OR drs.no_dark NE 1 OR drs.no_flat NE 1 THEN LBTI_IMGCAL, date_obs, DARK_PATH=dark_path, FLAT_PATH=flat_path, INFO=info
+  ; 1a. READ AND SAVE CALBRATION IMAGES (BPM, DARK, and FLAT)
+  ; *********************************************************
 
-; 1b. EXTRACT DATA IN RANGE AND DEFINE METRICS
-; ********************************************
+  ; --- Skip calibration if requested and restore the calibrated L0 file from disk
+  t0 = systime(1)
+  if drs.skip_red eq 1 then begin
+    if info gt 0 then print, '1. Restoring calibrated L0 images from disk.'
+    goto, skip_imgcal
+  endif else if info gt 0 then print, '1. Reading and calibrating L0 data.'
+  if info gt 0 then print, ' '
 
-; --- Extract useful data and define the number of background pairs (datatype = 3 for backward compatibility)
-file_id  = log.file_id
-bad_id   = log.bad_id
-datatype = log.datatype
-IF KEYWORD_SET(DATA_IDX) THEN idx_data = WHERE(file_id GE data_idx[0] AND file_id LE data_idx[1] AND bad_id NE 1 AND ((datatype EQ 0 OR datatype EQ 3)), n_data) $
-                         ELSE idx_data = WHERE(bad_id NE 1 AND ((datatype EQ 0 OR datatype EQ 3)), n_data)
-IF n_data LE 0 THEN MESSAGE, 'No data found in DATA_IDX range!'
+  ; --- Create master BPM, DRK, FLAT, and LIN files
+  if drs.no_bpm ne 1 or drs.no_dark ne 1 or drs.no_flat ne 1 then LBTI_IMGCAL, date_obs, dark_path = dark_path, flat_path = flat_path, info = info
 
-; --- Deal with BCKG_IDX
-IF KEYWORD_SET(BCKG_IDX) THEN BEGIN
-  idx_bckg = WHERE(file_id GE bckg_idx[0] AND file_id LE bckg_idx[1], n_bckg)
-  IF n_bckg GT 0 THEN idx_data = [idx_data, idx_bckg] ELSE PRINT, 'No background frames in BCKG_IDX range!'
-ENDIF               
+  ; 1b. EXTRACT DATA IN RANGE AND DEFINE METRICS
+  ; ********************************************
 
-; --- Read useful information 
-file_id   = file_id[idx_data]
-datatype  = datatype[idx_data]
-objname   = (log.obj_name)[idx_data]
-lbt_alt   = (log.lbtalt)[idx_data]
-pt_id     = (log.pt_id)[idx_data]
-cfg_id    = (log.cfg_id)[idx_data]
-nod_id    = (log.nod_id)[idx_data]
-obstype   = (log.obstype)[idx_data]
-time_obs  = (log.time_obs)[idx_data]
-cv        = (log.cv)[idx_data]
-flag      = (log.flag)[idx_data]
-n_xpix    = (log.n_xpix)[idx_data]   ; used to find the corresponding DARK AND FLAT
-n_ypix    = (log.n_ypix)[idx_data]   ; used to find the corresponding DARK AND FLAT
-log = {FILE_ID: file_id, NOD_ID: nod_id, CFG_ID: cfg_id, PT_ID: pt_id, CV: cv} ; Redefine log with minimum required information to save memory
+  ; --- Extract useful data and define the number of background pairs (datatype = 3 for backward compatibility)
+  file_id = log.file_id
+  bad_id = log.bad_id
+  datatype = log.datatype
+  if keyword_set(data_idx) then idx_data = where(file_id ge data_idx[0] and file_id le data_idx[1] and bad_id ne 1 and ((datatype eq 0 or datatype eq 3)), n_data) $
+  else idx_data = where(bad_id ne 1 and ((datatype eq 0 or datatype eq 3)), n_data)
+  if n_data le 0 then message, 'No data found in DATA_IDX range!'
 
-; --- Compute number of different nods 
-nod_uniq = nod_id[UNIQ(nod_id,  SORT(nod_id))]
-idx_pos  = WHERE(nod_uniq GE 0, n_pos)
-IF n_pos GT 0 THEN nod_uniq = nod_uniq[idx_pos] ELSE MESSAGE, 'No valid nods!'
-n_nod    = N_ELEMENTS(nod_uniq)
+  ; --- Deal with BCKG_IDX
+  if keyword_set(bckg_idx) then begin
+    idx_bckg = where(file_id ge bckg_idx[0] and file_id le bckg_idx[1], n_bckg)
+    if n_bckg gt 0 then idx_data = [idx_data, idx_bckg] else print, 'No background frames in BCKG_IDX range!'
+  endif
 
-; --- Derive current MJD
-hr = DOUBLE(STRMID(time_obs, 0, 2)) + DOUBLE(STRMID(time_obs, 3, 2))/60D + DOUBLE(STRMID(time_obs, 6, 2))/3.6D+3 + DOUBLE(STRMID(time_obs, 9, 3))/3.6D+6
-JDCNV, FIX(STRMID(date_obs, 0, 4)), FIX(STRMID(date_obs, 5, 2)), FIX(STRMID(date_obs, 8, 2)), hr, jd
-mjd_obs = jd - 2400000.5D                 ; mjd
+  ; --- Read useful information
+  file_id = file_id[idx_data]
+  datatype = datatype[idx_data]
+  objname = (log.obj_name)[idx_data]
+  lbt_alt = (log.lbtalt)[idx_data]
+  pt_id = (log.pt_id)[idx_data]
+  cfg_id = (log.cfg_id)[idx_data]
+  nod_id = (log.nod_id)[idx_data]
+  obstype = (log.obstype)[idx_data]
+  time_obs = (log.time_obs)[idx_data]
+  cv = (log.cv)[idx_data]
+  flag = (log.flag)[idx_data]
+  n_xpix = (log.n_xpix)[idx_data] ; used to find the corresponding DARK AND FLAT
+  n_ypix = (log.n_ypix)[idx_data] ; used to find the corresponding DARK AND FLAT
+  log = {file_id: file_id, nod_id: nod_id, cfg_id: cfg_id, pt_id: pt_id, cv: cv} ; Redefine log with minimum required information to save memory
 
-; --- Remove two NODs if data are being reduced in real-time (use 30 minutes as decision criterion)
-IF (MAX(mjd_obs)+0.5/24) GT (SYSTIME(/JULIAN, /UTC) - 2400000.5D) THEN n_nod -= 2
+  ; --- Compute number of different nods
+  nod_uniq = nod_id[uniq(nod_id, sort(nod_id))]
+  idx_pos = where(nod_uniq ge 0, n_pos)
+  if n_pos gt 0 then nod_uniq = nod_uniq[idx_pos] else message, 'No valid nods!'
+  n_nod = n_elements(nod_uniq)
 
-; Print WARNING if uneven number of nods when bckg_mode = 1
-IF n_nod MOD 2 NE 0 AND ABS(drs.bckg_mode) EQ 1 THEN BEGIN
-  MESSAGE, "Uneven number of nods not compatible with bckg_mode = 1. Removing the last nod.", /CONTINUE
-  n_nod -= 1
-ENDIF
+  ; --- Derive current MJD
+  hr = double(strmid(time_obs, 0, 2)) + double(strmid(time_obs, 3, 2)) / 60d + double(strmid(time_obs, 6, 2)) / 3.6d+3 + double(strmid(time_obs, 9, 3)) / 3.6d+6
+  JDCNV, fix(strmid(date_obs, 0, 4)), fix(strmid(date_obs, 5, 2)), fix(strmid(date_obs, 8, 2)), hr, jd
+  mjd_obs = jd - 2400000.5d ; mjd
 
-; --- Define metric used to select the background frames (compute mjd_obs if bckg_sel is not 1)
-CASE drs.bckg_sel OF 
-  0: metric = mjd_obs
-  1: metric = lbt_alt
-  2: metric = cv
-  ELSE : MESSAGE, 'Undefined background selection mode (BCKG_SEL)' 
-ENDCASE
+  ; --- Remove two NODs if data are being reduced in real-time (use 30 minutes as decision criterion)
+  if (max(mjd_obs) + 0.5 / 24) gt (systime(/julian, /utc) - 2400000.5d) then n_nod -= 2
 
-; 2. READ AND REDUCE SCIENCE IMAGES
-; *********************************
- 
-; --- Print info to screen
-IF info GT 0 THEN PRINT, ' '
-IF info GT 0 THEN PRINT, '   Processing ' + STRING(n_data, FORMAT='(I0)') + ' data files. This may take a while...'
+  ; Print WARNING if uneven number of nods when bckg_mode = 1
+  if n_nod mod 2 ne 0 and abs(drs.bckg_mode) eq 1 then begin
+    message, 'Uneven number of nods not compatible with bckg_mode = 1. Removing the last nod.', /continue
+    n_nod -= 1
+  endif
 
-; --- Loop over the nods (have to proceed per nod here to avoid reading and copying large data arrays)
-t0 = SYSTIME(1)
-FOR i_nod = 0, n_nod-1 DO BEGIN
-  ; If file already exists, skip
-  IF NOT FILE_TEST(pth.l0fits_path + date_obs + pth.sep + 'bckg' + pth.sep + '*_N' + STRING(nod_uniq[i_nod], FORMAT='(I03)') + '*IMG.fits') OR KEYWORD_SET(RENEW) THEN BEGIN
-    ; Init time stamp
-    tn = SYSTIME(1)
-    
-    ; Derive file index of frames in this nod
-    idx_nod = WHERE(nod_id EQ nod_uniq[i_nod], n)
-    IF n LT drs.min_frnod THEN BEGIN
-      MESSAGE, 'No enough frames in nod ' + STRING(i_nod, FORMAT='(I0)'), /CONTINUE
-      GOTO, skip_thisnod
-    ENDIF
-    
-    ; Derive current pointing ID number and frame size (needed to find dark and flat frames)
-    pt_cur = pt_id[idx_nod[0]]
-    nx     = n_xpix[idx_nod[0]]
-    ny     = n_ypix[idx_nod[0]]
-  
-    ; Print info to screen
-    IF info GT 0 THEN PRINT, '   Reducing nod ' + STRING(nod_uniq[i_nod], FORMAT='(I0)') + ' (' + STRING(i_nod+1, FORMAT='(I0)') + '/' + $
-                             STRING(n_nod, FORMAT='(I0)') + ', ' + STRING(n, FORMAT='(I0)') + ' frames)' 
-    
-    ; Derive obstype. If 3 (pure background), this nod can be skipped unless it is associated with a nulling nod (because it is used by the NSC)
-    ; In order to decide whether to reduce this nod or not, we look for nulling frames in the curring pointing.
-    obstype_nod = obstype[idx_nod[0]]                                     ; obstype of the current nod
-    tmp         = WHERE(obstype[WHERE(pt_id EQ pt_cur)] EQ 2, n_null_ob)  ; n_null_ob will contain the number of null OBs in this pointing
-    IF obstype_nod EQ 3 AND n_null_ob EQ 0 THEN GOTO, skip_thisnod        ; skip if background OB and no associated NULL OB in the same poiting
-    
-    ; Now derive file index of frames in the background nod(s). 
-    ; The background nods must belong to the same pointing and have the same obstype (or an obstype of 3).
-    IF obstype_nod NE 3 THEN BEGIN
-      CASE ABS(drs.bckg_mode) OF
-        1: idx_bck = WHERE(pt_id EQ pt_cur AND nod_id EQ nod_uniq[i_nod+(-1)^i_nod] AND ((obstype_nod EQ obstype OR obstype EQ 3)), n_bck)                            ; Background subtraction by nod pairs
-        2: idx_bck = WHERE(pt_id EQ pt_cur AND ((nod_id EQ nod_uniq[i_nod]-1 OR nod_id EQ nod_uniq[i_nod]+1)) AND ((obstype_nod EQ obstype OR obstype EQ 3)), n_bck)  ; Background subtraction using adjacent nods
-        3: idx_bck = WHERE(pt_id EQ pt_cur AND obstype EQ 3, n_bck)                                                                                                   ; Background subtraction using dedicated background frames
-        ELSE: BEGIN
-           idx_bck = WHERE(pt_id EQ pt_cur AND nod_id EQ nod_uniq[i_nod]+(-1)^i_nod, n_bck)
-           IF n_bck LE 0 THEN idx_bck = WHERE(pt_id EQ pt_cur AND nod_id EQ nod_uniq[i_nod]-(-1)^i_nod, n_bck)
-        END
-      ENDCASE
-      ; If no adjacent background frames, then look within pointing
-      IF n_bck LE 0 THEN idx_bck = WHERE(pt_id EQ pt_cur AND obstype EQ 3, n_bck)
-      ; If still no background frames, then look everywhere
-      IF n_bck LE 0 THEN idx_bck = WHERE(obstype EQ 3, n_bck) 
-    ENDIF ELSE idx_bck = WHERE(pt_id EQ pt_cur AND ((nod_id EQ nod_uniq[i_nod]-1 OR nod_id EQ nod_uniq[i_nod]+1)), n_bck)    
-    
-    ; Remove outliers based on central value (5 sigma RMS). Not necessary
-    ; cv_nod  = cv[idx_nod]
-    ; cv_bck  = cv[idx_bck]
-    ; AVGSDV, [cv_bck, cv_nod], cv_avg, cv_rms
-    ; idx_bad = WHERE(ABS(cv_nod-cv_avg) GT 5*cv_rms, COMPLEMENT=idx_ok, n_bad) & IF n_bad GT 0 THEN idx_nod = idx_nod[idx_ok] & n     = N_ELEMENTS(idx_nod)
-    ; idx_bad = WHERE(ABS(cv_bck-cv_avg) GT 5*cv_rms, COMPLEMENT=idx_ok, n_bad) & IF n_bad GT 0 THEN idx_bck = idx_bck[idx_ok] & n_bck = N_ELEMENTS(idx_bck)
-    
-    ; Keep only background frames within maximum allowed time
-    IF drs.max_time GT 0 THEN BEGIN
-      idx_time = WHERE(ABS(mjd_obs[idx_bck]-mjd_obs[idx_nod[0]]) LT drs.max_time/24./60. OR ABS(mjd_obs[idx_bck]-mjd_obs[idx_nod[-1]]) LT drs.max_time/24./60., n_bck)
-      IF n_bck GT drs.min_frnod THEN idx_bck = idx_bck[idx_time]
-    ENDIF
-    
-    ; Keep only the closest frames based on the chosen metric (e.g., time, elevation, central value)
-    IF drs.n_frbck NE 0 AND drs.n_frbck LT n_bck THEN BEGIN
-      IF drs.n_frbck  EQ -1 THEN n_bck = (n<n_bck) ELSE n_bck = drs.n_frbck         ; if -1, keep the same number of frames as in the current nod
-      idx_min = SORT(ABS(metric[idx_bck]-MEAN(metric[idx_nod])))                    ; we compare to the mean value of the current NOD
-      idx_bck = idx_bck[idx_min[0:n_bck-1]]
-    ENDIF   
-      
-    ; Skip if no background frames   
-    IF n_bck LT drs.min_frnod THEN BEGIN
-      MESSAGE, 'No background frames for nod ' + STRING(i_nod, FORMAT='(I0)'), /CONTINUE
-      GOTO, skip_thisnod
-    ENDIF
-    
-    ; Concatenate file ID to be passed to LBTI_READDATA (and sort them)
-    ;PRINT, MIN(idx_nod), MAX(idx_nod), N_ELEMENTS(idx_nod)
-    ;PRINT, MIN(idx_bck), MAX(idx_bck), N_ELEMENTS(idx_bck)
-    idx_all = [idx_nod,idx_bck]
-    fid_all = file_id[idx_all]
-    fid_all = fid_all[SORT(fid_all)]
-    min_id  = MIN(fid_all)
-    max_id  = MAX(fid_all)
-    
-    ; Now look if some files have already been read in the previous iteration (and remove them from the files to be read in this iteration)
-    ; FILE ID must match, not file index!
-    IF KEYWORD_SET(hdr_data) THEN BEGIN
-      MATCH, fid_all, hdr_data.file_id, idx_ok, idx_prev, COUNT = n_prev  ; hdr_data.file_id is defined below and comes from the previous iteration
-      IF n_prev GT 0 THEN BEGIN
-        ; File to be read
-        fid_all[idx_ok] = -1
-        idx_read = WHERE(fid_all NE -1, n_read)
-        ;IF info GE 3 THEN PRINT, '    Frames already read in previous iteration', n_prev, n_read
-        IF n_read GT 0 THEN BEGIN
-          fid_all = fid_all[idx_read]
-          ; Retrieve frames already read 
-          ; img_data and hdr_data are defined below and come from the previous iteration
-          img_prev = img_data[*,*,idx_prev]
-          hdr_prev = hdr_data[idx_prev]
-          ; Undefine arrays to save memory
-          UNDEFINE, img_data, hdr_data
-        ENDIF         
-      ENDIF ELSE n_read = 1
-    ENDIF ELSE n_read = 1
-    
-    ; Read OB's data (only if new frames to read)
-    IF n_read GT 0 THEN BEGIN
-      IF info GT 0 THEN PRINT, '    - reading L0 data.'
-      img_data = LBTI_READDATA(data_path, CROP=drs.pre_crop, DATA_IDX=fid_all, HDR_DATA=hdr_data, MLOG_DATA=log, INFO=info, PLOT=plot) 
-                                                     
-      ; Reduce L0 images (dark subtraction, flat fielding, wavelentgh calibration, pickup noise, etc...)
-      IF info GT 0 THEN PRINT, '    - calibrating L0 images.'
-      
-      ; --- Read last dark and flat files (assumes that we used only a single size throught the night)
-      IF drs.no_bpm  NE 1 THEN LBTI_READCALIMG, pth.bpm_path,  date_obs, [nx,ny], -999, bpm, hdr_bpm, CROP=drs.pre_crop ELSE IF info GT 0 THEN PRINT, '      - no bad pixel correction'  ; -999 will tell this routine to use the master bad pixel map
-      IF drs.no_bpm  NE 1 AND (SIZE(bpm))[0] LE 1 THEN GOTO, skip_thisnod
-      IF drs.no_dark NE 1 THEN LBTI_READCALIMG, pth.dark_path, date_obs, [nx,ny], pt_cur, drk, hdr_drk, CROP=drs.pre_crop ELSE IF info GT 0 THEN PRINT, '      - no dark subraction'
-      IF drs.no_dark NE 1 AND (SIZE(drk))[0] LE 1 THEN GOTO, skip_thisnod
-      IF drs.no_flat NE 1 THEN LBTI_READCALIMG, pth.flat_path, date_obs, [nx,ny], pt_cur, flt, hdr_flt, CROP=drs.pre_crop ELSE IF info GT 0 THEN PRINT, '      - data not flat fielded'
-      IF drs.no_flat NE 1 AND (SIZE(flt))[0] LE 1 THEN GOTO, skip_thisnod
-            
-      ; --- Flat field each frame of this nod
-      img_data = LBTI_IMGRED(TEMPORARY(img_data), TEMPORARY(hdr_data), IMG_BPM=bpm, IMG_DRK=drk, IMG_FLT=flt, HDR_DRK=hdr_drk, HDR_FLT=hdr_flt, $             ; Images and correspondind header        
-                             HDR_DATA=hdr_data, $                                                                                                             ; Output keywords
-                             LOG_FILE=log_file, INFO=info, PLOT=plot)                                                                                         ; Input keywords
-      IF (SIZE(img_data))[0] EQ 0 THEN GOTO, skip_thisnod
-      
-      ; Undefine arrays to save memory
-      UNDEFINE, bpm, drk, flt, hdr_bpm, hdr_drk, hdr_flt
-      
-      ; Now concatenate files read this iteration with files already read before
-      IF KEYWORD_SET(hdr_prev) GT 0 THEN BEGIN
-        IF n_prev GT 0 THEN BEGIN ; n_prev not defined if i_nod = 0
-          ; Concatenate
-          img_data = [[[img_data]],[[img_prev]]]
-          hdr_data = [hdr_data,hdr_prev]
-          ; Sort (better have data in chronolical order for later)
-          idx_srt  = SORT(hdr_data.file_id)
-          hdr_data = TEMPORARY(hdr_data[idx_srt])
-          img_data = TEMPORARY(img_data[*,*,idx_srt])
-        ENDIF
-      ENDIF
-    ENDIF
-    
-    ; Only keep data in the useful range
-    idx_ok   = WHERE(hdr_data.file_id GE min_id AND hdr_data.file_id LE max_id)
-    img_data = img_data[*,*,idx_ok]
-    hdr_data = hdr_data[idx_ok]
-    
-    ; Assign background nod flag
-    idx_bck = WHERE(hdr_data.nod_id NE nod_uniq[i_nod], COMPLEMENT=idx_nod)
-    hdr_data[idx_nod].bck_nod = 0
-    hdr_data[idx_bck].bck_nod = 1
-      
-    ; Perform background subtraction and save data         
-    IF info GT 0 THEN PRINT, '    - performing background subtraction.'
-    LBTI_IMGBCK, img_data, hdr_data, BCKG_PATH=bckg_path, LOG_FILE=log_file, INFO=info, NO_SAVE=no_save, PLOT=plot                               ; Input keywords
-                                                                             
-    ; Jump point of problem with nod computation
-    skip_thisnod:
-    
-    ; Print time to process this nod
-    IF info GE 3 THEN PRINT, '   Time to process this nod : ', SYSTIME(1)-tn
-  ENDIF ELSE PRINT, '   Nod ' + STRING(nod_uniq[i_nod], FORMAT='(I0)') + ' already exists'
-ENDFOR
+  ; --- Define metric used to select the background frames (compute mjd_obs if bckg_sel is not 1)
+  case drs.bckg_sel of
+    0: metric = mjd_obs
+    1: metric = lbt_alt
+    2: metric = cv
+    else: message, 'Undefined background selection mode (BCKG_SEL)'
+  endcase
 
-; Print info to screen
-t1 = SYSTIME(1)
-IF info GT 2 THEN PRINT, 'Time to perform L0 data calibration :', t1-t0
-IF info GT 0 THEN PRINT, ' '
+  ; 2. READ AND REDUCE SCIENCE IMAGES
+  ; *********************************
 
-; Jumping point if restoring calibrated L0 files
-skip_imgcal:
+  ; --- Print info to screen
+  if info gt 0 then print, ' '
+  if info gt 0 then print, '   Processing ' + string(n_data, format = '(I0)') + ' data files. This may take a while...'
 
+  ; --- Loop over the nods (have to proceed per nod here to avoid reading and copying large data arrays)
+  t0 = systime(1)
+  for i_nod = 0, n_nod - 1 do begin
+    ; If file already exists, skip
+    if not file_test(pth.l0Fits_path + date_obs + pth.sep + 'bckg' + pth.sep + '*_N' + string(nod_uniq[i_nod], format = '(I03)') + '*IMG.fits') or keyword_set(renew) then begin
+      ; Init time stamp
+      tn = systime(1)
 
-; 3. FLUX COMPUTATION (also needed for frame centering and cropping before ADI processing)
-; *******************
+      ; Derive file index of frames in this nod
+      idx_nod = where(nod_id eq nod_uniq[i_nod], n)
+      if n lt drs.min_frnod then begin
+        message, 'No enough frames in nod ' + string(i_nod, format = '(I0)'), /continue
+        goto, skip_thisnod
+      endif
 
-; --- Skip flux computation if requested and restore flux from disk
-t2 = SYSTIME(1)
-IF drs.skip_flx EQ 1 AND drs.skip_vis EQ 1 THEN BEGIN
-  IF info GT 0 THEN BEGIN
-    IF drs.skip_flx EQ 1 THEN PRINT, '2. Restoring flux measurements from disk.' $
-                         ELSE IF drs.skip_vis EQ 1 THEN PRINT, '2. Restoring visibility measurements from disk.'
-  ENDIF
-  GOTO, skip_flx
-ENDIF
-IF info GT 0 THEN PRINT, ' '
+      ; Derive current pointing ID number and frame size (needed to find dark and flat frames)
+      pt_cur = pt_id[idx_nod[0]]
+      nx = n_xpix[idx_nod[0]]
+      ny = n_ypix[idx_nod[0]]
 
-; --- Restore LO log file and read useful data
-datalog = pth.l0fits_path + date_obs + pth.sep + 'datalog.sav'
-IF NOT FILE_TEST(datalog) THEN BEGIN
-  MESSAGE, 'No data log file found!', /CONTINUE
-  RETURN
-ENDIF ELSE RESTORE, datalog
+      ; Print info to screen
+      if info gt 0 then print, '   Reducing nod ' + string(nod_uniq[i_nod], format = '(I0)') + ' (' + string(i_nod + 1, format = '(I0)') + '/' + $
+        string(n_nod, format = '(I0)') + ', ' + string(n, format = '(I0)') + ' frames)'
 
-; --- Extract relevant information for all data (used to computed OB id of photometric and background frames)
-objname = data_r.objname
-nod_id  = data_r.nod_id   & nod_id0 = nod_id
-cfg_id  = data_r.cfg_id   & cfg_id0 = cfg_id
-pt_id   = data_r.pt_id    & pt_id0  = pt_id
-obstype = data_r.obstype
-xcen_sx = data_r.xcen_sx  & xcen_dx = data_r.xcen_dx
-ycen_sx = data_r.ycen_sx  & ycen_dx = data_r.ycen_dx
-min_fid = data_r.min_fid
-max_fid = data_r.max_fid
-flag    = data_r.flag
+      ; Derive obstype. If 3 (pure background), this nod can be skipped unless it is associated with a nulling nod (because it is used by the NSC)
+      ; In order to decide whether to reduce this nod or not, we look for nulling frames in the curring pointing.
+      obstype_nod = obstype[idx_nod[0]] ; obstype of the current nod
+      tmp = where(obstype[where(pt_id eq pt_cur)] eq 2, n_null_ob) ; n_null_ob will contain the number of null OBs in this pointing
+      if obstype_nod eq 3 and n_null_ob eq 0 then goto, skip_thisnod ; skip if background OB and no associated NULL OB in the same poiting
 
-time_obs = data_r.ut_time
-ut_time  = DOUBLE(STRMID(time_obs, 0, 2)) + DOUBLE(STRMID(time_obs, 3, 2))/60D + DOUBLE(STRMID(time_obs, 6, 2))/3.6D+3 + DOUBLE(STRMID(time_obs, 9, 3))/3.6D+6
+      ; Now derive file index of frames in the background nod(s).
+      ; The background nods must belong to the same pointing and have the same obstype (or an obstype of 3).
+      if obstype_nod ne 3 then begin
+        case abs(drs.bckg_mode) of
+          1: idx_bck = where(pt_id eq pt_cur and nod_id eq nod_uniq[i_nod + (-1) ^ i_nod] and ((obstype_nod eq obstype or obstype eq 3)), n_bck) ; Background subtraction by nod pairs
+          2: idx_bck = where(pt_id eq pt_cur and ((nod_id eq nod_uniq[i_nod] - 1 or nod_id eq nod_uniq[i_nod] + 1)) and ((obstype_nod eq obstype or obstype eq 3)), n_bck) ; Background subtraction using adjacent nods
+          3: idx_bck = where(pt_id eq pt_cur and obstype eq 3, n_bck) ; Background subtraction using dedicated background frames
+          else: begin
+            idx_bck = where(pt_id eq pt_cur and nod_id eq nod_uniq[i_nod] + (-1) ^ i_nod, n_bck)
+            if n_bck le 0 then idx_bck = where(pt_id eq pt_cur and nod_id eq nod_uniq[i_nod] - (-1) ^ i_nod, n_bck)
+          end
+        endcase
+        ; If no adjacent background frames, then look within pointing
+        if n_bck le 0 then idx_bck = where(pt_id eq pt_cur and obstype eq 3, n_bck)
+        ; If still no background frames, then look everywhere
+        if n_bck le 0 then idx_bck = where(obstype eq 3, n_bck)
+      endif else idx_bck = where(pt_id eq pt_cur and ((nod_id eq nod_uniq[i_nod] - 1 or nod_id eq nod_uniq[i_nod] + 1)), n_bck)
 
-; --- Read target information (or query online catalogs if not present)
-tgt_uniq = objname[UNIQ(objname,  SORT(objname))]
-GET_TGT, tgt_uniq, tgt, DATABASE= pth.input_path + drs.database
-struct_add_field, tgt, 'calfor', 'tbd'
-struct_add_field, tgt, 'maxapr', 1D3
+      ; Remove outliers based on central value (5 sigma RMS). Not necessary
+      ; cv_nod  = cv[idx_nod]
+      ; cv_bck  = cv[idx_bck]
+      ; AVGSDV, [cv_bck, cv_nod], cv_avg, cv_rms
+      ; idx_bad = WHERE(ABS(cv_nod-cv_avg) GT 5*cv_rms, COMPLEMENT=idx_ok, n_bad) & IF n_bad GT 0 THEN idx_nod = idx_nod[idx_ok] & n     = N_ELEMENTS(idx_nod)
+      ; idx_bad = WHERE(ABS(cv_bck-cv_avg) GT 5*cv_rms, COMPLEMENT=idx_ok, n_bad) & IF n_bad GT 0 THEN idx_bck = idx_bck[idx_ok] & n_bck = N_ELEMENTS(idx_bck)
 
-; --- Assign calibrators to their science object (needed because of EEID computation).
-; --- Also assign the maximum aperture radius possible for each star.
-pt_uniq = pt_id[UNIQ(pt_id,  SORT(pt_id))]
-n_pt    = N_ELEMENTS(pt_uniq)
-flag_pt = STRARR(n_pt)
-tgt_pt  = flag_pt
-max_apr = INTARR(n_pt)
-FOR i = 0, n_pt-1 DO BEGIN
-  idx        = WHERE(pt_id EQ pt_uniq[i])
-  flag_pt[i] = flag[idx[0]]
-  tgt_pt[i]  = STRLOWCASE(STRCOMPRESS(objname[idx[0]], /REMOVE_ALL)) 
-   ; in sub-frame mode, this doesn't capture the distance to the horizontal center but no easy solution for that at this point...  
-   ; this is also only valid for SX, which encodes the position of the nulling beam. PHOTOMETRIC beam should be close
-  idx        = WHERE(pt_id EQ pt_uniq[i] AND ycen_sx NE 0 AND xcen_sx NE 0)
-  IF drs.sky_col EQ 0 THEN  max_apr[i] = MIN(xcen_sx[idx] MOD cnf.X_CHAN) < MIN(ycen_sx[idx] MOD cnf.Y_CHAN) < MIN(cnf.X_CHAN - (xcen_sx[idx] MOD cnf.X_CHAN)) < MIN(cnf.Y_CHAN - (ycen_sx[idx] MOD cnf.Y_CHAN)) $
-                      ELSE  max_apr[i] = MIN(ycen_sx[idx] MOD cnf.Y_CHAN) < MIN(cnf.Y_CHAN - (ycen_sx[idx] MOD cnf.Y_CHAN))  ; look only in the Y direction!
-  IF flag_pt[i] EQ 'SCI' THEN BEGIN
-    idx_tgt = WHERE(tgt.name EQ tgt_pt[i])
-    IF tgt[idx_tgt].maxapr GT max_apr[i] THEN tgt[idx_tgt].maxapr = max_apr[i]
-  ENDIF
-ENDFOR 
-; Pre-defined list (should go in a separate file eventually)
-READ_TABLE, 'nodrs/input/calsci_pairs.txt', date_list, ut_min, ut_max, cal_list, sci_list, FIRST=2, STRING=[3,4], SEPARATOR=';'
+      ; Keep only background frames within maximum allowed time
+      if drs.max_time gt 0 then begin
+        idx_time = where(abs(mjd_obs[idx_bck] - mjd_obs[idx_nod[0]]) lt drs.max_time / 24. / 60. or abs(mjd_obs[idx_bck] - mjd_obs[idx_nod[-1]]) lt drs.max_time / 24. / 60., n_bck)
+        if n_bck gt drs.min_frnod then idx_bck = idx_bck[idx_time]
+      endif
 
-; Loop over the pointings
-FOR i = 0, n_pt-1 DO BEGIN
-  ; Current target
-  idx_tgt = WHERE(tgt.name EQ tgt_pt[i])
-  ra_tgt  = tgt[idx_tgt].ra
-  de_tgt  = tgt[idx_tgt].dec
-  ; If in pre-defined list, use it!
-  idx_ok = WHERE(STRLOWCASE(tgt_pt[i]) EQ STRLOWCASE(cal_list) AND date EQ date_list AND ut_time[i] GE ut_min AND ut_time[i] LE ut_max, n_ok)
-  IF n_ok EQ 1 THEN tgt[idx_tgt].calfor = STRLOWCASE(sci_list[idx_ok]) ELSE BEGIN
-    ; If CAL, find nearest SCIs
-    IF flag_pt[i] EQ 'CAL' THEN BEGIN
-      idx_low = MAX(WHERE(pt_uniq LT pt_uniq[i] AND flag_pt EQ 'SCI', n1)) & IF n1 GT 0 THEN tgt_low = tgt_pt[idx_low] ELSE tgt_low = 'none'  ; Nearest previous SCI pointings
-      idx_up  = MIN(WHERE(pt_uniq GT pt_uniq[i] AND flag_pt EQ 'SCI', n2)) & IF n2 GT 0 THEN tgt_up  = tgt_pt[idx_up]  ELSE tgt_up  = 'none'  ; Nearest following SCI pointings
-      ; Current target
-      IF n1 NE 0 OR n2 NE 0 THEN BEGIN        
-        ; If not the same, find the one with the closest RA
-        IF tgt_low NE tgt_up THEN BEGIN
-          idx = WHERE(tgt.name EQ tgt_low, n_low)
-          IF n_low GE 1 THEN ra_low  = tgt[idx].ra  ELSE ra_low = 1D9
-          IF n_low GE 1 THEN de_low  = tgt[idx].dec ELSE de_low = 1D9
-          idx = WHERE(tgt.name EQ tgt_up, n_up)
-          IF n_up GE 1 THEN ra_up = tgt[idx].ra  ELSE ra_up = 1D9
-          IF n_up GE 1 THEN de_up = tgt[idx].dec ELSE de_up = 1D9
-          IF ((ra_tgt-ra_low)^2+(de_tgt-de_low)^2) LT ((ra_tgt-ra_up)^2+(de_tgt-de_up)^2) THEN tgt[idx_tgt].calfor = tgt_low ELSE tgt[idx_tgt].calfor = tgt_up
-        ENDIF ELSE tgt[idx_tgt].calfor = tgt_up
-      ENDIF ELSE BEGIN
-        ; Only needed if aper_rad is 0
-        IF drs.aper_rad EQ 0 THEN BEGIN
-          READ, ttt, PROMPT='Enter science object for ' + tgt_pt[i] + ' : '
-          tgt[idx_tgt].calfor = ttt
-        ENDIF ELSE tgt[idx_tgt].calfor = 'UND'
-      ENDELSE
-    ENDIF
-   ENDELSE
-ENDFOR
+      ; Keep only the closest frames based on the chosen metric (e.g., time, elevation, central value)
+      if drs.n_frbck ne 0 and drs.n_frbck lt n_bck then begin
+        if drs.n_frbck eq -1 then n_bck = (n < n_bck) else n_bck = drs.n_frbck ; if -1, keep the same number of frames as in the current nod
+        idx_min = sort(abs(metric[idx_bck] - mean(metric[idx_nod]))) ; we compare to the mean value of the current NOD
+        idx_bck = idx_bck[idx_min[0 : n_bck - 1]]
+      endif
 
-; --- Consitency check
-; Make sure there is no missing object name
-;idx_missing = WHERE(obj_name EQ '?' OR obj_name EQ ' ', n_missing)
-;IF n_missing GE 1 THEN MESSAGE, 'Problem with object name in files : ' + STRING(file_id[idx_missing], FORMAT='(I0)') + ' (' + obj_name[idx_missing] +')'
+      ; Skip if no background frames
+      if n_bck lt drs.min_frnod then begin
+        message, 'No background frames for nod ' + string(i_nod, format = '(I0)'), /continue
+        goto, skip_thisnod
+      endif
 
-; --- Assign unique ID number to each line of the file
-n_data  = N_ELEMENTS(objname)
-file_id = INDGEN(n_data) + 1  ; I don't want 0!!!!
+      ; Concatenate file ID to be passed to LBTI_READDATA (and sort them)
+      ; PRINT, MIN(idx_nod), MAX(idx_nod), N_ELEMENTS(idx_nod)
+      ; PRINT, MIN(idx_bck), MAX(idx_bck), N_ELEMENTS(idx_bck)
+      idx_all = [idx_nod, idx_bck]
+      fid_all = file_id[idx_all]
+      fid_all = fid_all[sort(fid_all)]
+      min_id = min(fid_all)
+      max_id = max(fid_all)
 
-; --- Assign OB id number to coherent data (so don't consider photometric and background frames in the OB id count)
-idx_coh = WHERE(obstype EQ 1 OR obstype EQ 2, n_coh)
-IF n_coh GT 0 THEN BEGIN
-  ob_id = INTARR(n_data) - 1 ; Photometry and background frames have an OB id of -1.
-  CASE drs.ob_mode OF    
-    0: dat_id = [TRANSPOSE(nod_id[idx_coh]),TRANSPOSE(pt_id[idx_coh]),TRANSPOSE(cfg_id[idx_coh])]
-    1: MESSAGE, 'OB_MODE=1 not yet implemented'
-    2: MESSAGE, 'OB_MODE=2 not yet implemented'
-    3: MESSAGE, 'OB_MODE=3 not yet implemented (one OB per chop position)'
-  ENDCASE
-  ob_id[idx_coh] = ATTRIBUTE_ID(dat_id) + 1 ; I don't want 0!!!!
-ENDIF ELSE ob_id = nod_id
-ob_id0 = ob_id
+      ; Now look if some files have already been read in the previous iteration (and remove them from the files to be read in this iteration)
+      ; FILE ID must match, not file index!
+      if keyword_set(hdr_data) then begin
+        MATCH, fid_all, hdr_data.file_id, idx_ok, idx_prev, count = n_prev ; hdr_data.file_id is defined below and comes from the previous iteration
+        if n_prev gt 0 then begin
+          ; File to be read
+          fid_all[idx_ok] = -1
+          idx_read = where(fid_all ne -1, n_read)
+          ; IF info GE 3 THEN PRINT, '    Frames already read in previous iteration', n_prev, n_read
+          if n_read gt 0 then begin
+            fid_all = fid_all[idx_read]
+            ; Retrieve frames already read
+            ; img_data and hdr_data are defined below and come from the previous iteration
+            img_prev = img_data[*, *, idx_prev]
+            hdr_prev = hdr_data[idx_prev]
+            ; Undefine arrays to save memory
+            UNDEFINE, img_data, hdr_data
+          endif
+        endif else n_read = 1
+      endif else n_read = 1
 
-; --- Assign background and photometric file ID for each coherent OB (only needed for null OB in principle)
-bck_id  = INTARR(n_data)           ; will contain the corresponding background file ID
-pho_fid = INTARR(n_data)           ; will contain the corresponding photometric file ID
-nod_pos = FIX(ycen_sx/cnf.y_chan)  ; this assumes that each NOD ends up in a different vertical channel (which is true for nulling)
-FOR i_d = 0, n_data-1 DO BEGIN
-  
-  ; 1. Compute the corredponding background OB. It must be of the same pointing (and same config ID) but different nod position (+ avoid photometric frames)
-  idx_bck = WHERE(pt_id EQ pt_id[i_d] AND cfg_id EQ cfg_id[i_d] AND ob_id NE ob_id[i_d] AND obstype NE 0 AND (nod_pos NE nod_pos[i_d] OR obstype EQ 3), n_bck)
-  IF n_bck GT 0 THEN BEGIN
-    file_bck = file_id[idx_bck]                                                     ; list of suitable files
-    idx_min  = WHERE(ABS(file_id[i_d]-file_bck) EQ MIN(ABS(file_id[i_d]-file_bck))) ; closest ones
-    IF N_ELEMENTS(idx_min) GT 1 THEN BEGIN                                          ; if two, keep the one with more frames
-      tmp = MAX(max_fid[idx_bck[idx_min]]-min_fid[idx_bck[idx_min]], i_max)
-    ENDIF ELSE i_max = 0
-    bck_id[i_d] = file_bck[idx_min[i_max]]              ; retain only one
-  ENDIF ELSE bck_id[i_d] = -1                           ; no associated background file
-  
-  ; 2. Compute the associated photometric file ID. Ideally, it must be of the same pointing but look in different pointings if not found
-  idx_pho = WHERE(pt_id EQ pt_id[i_d] AND cfg_id EQ cfg_id[i_d] AND obstype EQ 0 AND xcen_sx NE 0 AND ycen_sx NE 0, n_pho)
-  IF n_pho LE 0 THEN BEGIN
-    PRINT, ' No corresponding photometric file for nod ' + STRING(nod_id[i_d], FORMAT='(I0)') + '. Looking in other pointings.'
-    IF lun GT 0 THEN PRINTF, lun, ' No corresponding photometric file for nod ' + STRING(nod_id[i_d], FORMAT='(I0)') + '. Looking in other pointings.'
-    idx_pho = WHERE(objname EQ objname[i_d] AND cfg_id EQ cfg_id[i_d] AND obstype EQ 0 AND xcen_sx NE 0 AND ycen_sx NE 0, n_pho)
-  ENDIF 
-  IF n_pho GT 0 THEN BEGIN
-    fid_pho = file_id[idx_pho]                                                      ; list of suitable file IDs
-    idx_min  = WHERE(ABS(file_id[i_d]-fid_pho) EQ MIN(ABS(file_id[i_d]-fid_pho))) ; closest one
-    IF N_ELEMENTS(idx_min) GT 1 THEN BEGIN                                          ; if two, keep the one with the more frames
-      tmp = MAX(max_fid[idx_pho[idx_min]]-min_fid[idx_pho[idx_min]], i_max)
-    ENDIF ELSE i_max = 0
-    pho_fid[i_d] = fid_pho[idx_min[i_max]]            ; retain only one
-  ENDIF ELSE BEGIN
-    IF info GT 0 THEN BEGIN
-      PRINT, ' No corresponding photometric file for nod ' + STRING(nod_id[i_d], FORMAT='(I0)')
-      IF lun GT 0 THEN PRINTF, lun, ' No corresponding photometric file for nod ' + STRING(nod_id[i_d], FORMAT='(I0)')
-    ENDIF
-    pho_fid[i_d] = -1 ; no associated photometric NOD
-  ENDELSE  
-ENDFOR
+      ; Read OB's data (only if new frames to read)
+      if n_read gt 0 then begin
+        if info gt 0 then print, '    - reading L0 data.'
+        img_data = LBTI_READDATA(data_path, crop = drs.pre_crop, data_idx = fid_all, hdr_data = hdr_data, mlog_data = log, info = info, plot = plot)
 
-; -- Extract data in DATA_IDX range
-IF KEYWORD_SET(DATA_IDX) THEN BEGIN
-  idx_data = WHERE(data_r.min_fid GE data_idx[0] AND data_r.max_fid LE data_idx[1], n_data)
-  IF n_data GT 0 THEN BEGIN
-    data_r  = data_r[idx_data] 
-    cfg_id0 = cfg_id[idx_data] ; only used for print
-    pt_id0  = pt_id[idx_data]  ; only used for print
-    nod_id0 = nod_id[idx_data] ; only used for print
-    ob_id0  = ob_id[idx_data]  ; only used for print
-  ENDIF ELSE BEGIN
-    MESSAGE, 'No data in the DATA_IDX range', /CONTINUE
+        ; Reduce L0 images (dark subtraction, flat fielding, wavelentgh calibration, pickup noise, etc...)
+        if info gt 0 then print, '    - calibrating L0 images.'
+
+        ; --- Read last dark and flat files (assumes that we used only a single size throught the night)
+        if drs.no_bpm ne 1 then LBTI_READCALIMG, pth.bpm_path, date_obs, [nx, ny], -999, bpm, hdr_bpm, crop = drs.pre_crop else if info gt 0 then print, '      - no bad pixel correction' ; -999 will tell this routine to use the master bad pixel map
+        if drs.no_bpm ne 1 and (size(bpm))[0] le 1 then goto, skip_thisnod
+        if drs.no_dark ne 1 then LBTI_READCALIMG, pth.dark_path, date_obs, [nx, ny], pt_cur, drk, hdr_drk, crop = drs.pre_crop else if info gt 0 then print, '      - no dark subraction'
+        if drs.no_dark ne 1 and (size(drk))[0] le 1 then goto, skip_thisnod
+        if drs.no_flat ne 1 then LBTI_READCALIMG, pth.flat_path, date_obs, [nx, ny], pt_cur, flt, hdr_flt, crop = drs.pre_crop else if info gt 0 then print, '      - data not flat fielded'
+        if drs.no_flat ne 1 and (size(flt))[0] le 1 then goto, skip_thisnod
+
+        ; --- Flat field each frame of this nod
+        img_data = LBTI_IMGRED(temporary(img_data), temporary(hdr_data), img_bpm = bpm, img_drk = drk, img_flt = flt, hdr_drk = hdr_drk, hdr_flt = hdr_flt, $ ; Images and correspondind header
+          hdr_data = hdr_data, $ ; Output keywords
+          log_file = log_file, info = info, plot = plot) ; Input keywords
+        if (size(img_data))[0] eq 0 then goto, skip_thisnod
+
+        ; Undefine arrays to save memory
+        UNDEFINE, bpm, drk, flt, hdr_bpm, hdr_drk, hdr_flt
+
+        ; Now concatenate files read this iteration with files already read before
+        if keyword_set(hdr_prev) gt 0 then begin
+          if n_prev gt 0 then begin ; n_prev not defined if i_nod = 0
+            ; Concatenate
+            img_data = [[[img_data]], [[img_prev]]]
+            hdr_data = [hdr_data, hdr_prev]
+            ; Sort (better have data in chronolical order for later)
+            idx_srt = sort(hdr_data.file_id)
+            hdr_data = temporary(hdr_data[idx_srt])
+            img_data = temporary(img_data[*, *, idx_srt])
+          endif
+        endif
+      endif
+
+      ; Only keep data in the useful range
+      idx_ok = where(hdr_data.file_id ge min_id and hdr_data.file_id le max_id)
+      img_data = img_data[*, *, idx_ok]
+      hdr_data = hdr_data[idx_ok]
+
+      ; Assign background nod flag
+      idx_bck = where(hdr_data.nod_id ne nod_uniq[i_nod], complement = idx_nod)
+      hdr_data[idx_nod].bck_nod = 0
+      hdr_data[idx_bck].bck_nod = 1
+
+      ; Perform background subtraction and save data
+      if info gt 0 then print, '    - performing background subtraction.'
+      LBTI_IMGBCK, img_data, hdr_data, bckg_path = bckg_path, log_file = log_file, info = info, no_save = no_save, plot = plot ; Input keywords
+
+      ; Jump point of problem with nod computation
+      skip_thisnod:
+
+      ; Print time to process this nod
+      if info ge 3 then print, '   Time to process this nod : ', systime(1) - tn
+    endif else print, '   Nod ' + string(nod_uniq[i_nod], format = '(I0)') + ' already exists'
+  endfor
+
+  ; Print info to screen
+  t1 = systime(1)
+  if info gt 2 then print, 'Time to perform L0 data calibration :', t1 - t0
+  if info gt 0 then print, ' '
+
+  ; Jumping point if restoring calibrated L0 files
+  skip_imgcal:
+
+  ; 3. FLUX COMPUTATION (also needed for frame centering and cropping before ADI processing)
+  ; *******************
+
+  ; --- Skip flux computation if requested and restore flux from disk
+  t2 = systime(1)
+  if drs.skip_flx eq 1 and drs.skip_vis eq 1 then begin
+    if info gt 0 then begin
+      if drs.skip_flx eq 1 then print, '2. Restoring flux measurements from disk.' $
+      else if drs.skip_vis eq 1 then print, '2. Restoring visibility measurements from disk.'
+    endif
+    goto, skip_flx
+  endif
+  if info gt 0 then print, ' '
+
+  ; --- Restore LO log file and read useful data
+  datalog = pth.l0Fits_path + date_obs + pth.sep + 'datalog.sav'
+  if not file_test(datalog) then begin
+    message, 'No data log file found!', /continue
     RETURN
-  ENDELSE
-ENDIF ELSE n_data = N_ELEMENTS(obj_name)
+  endif else restore, datalog
 
-; -- Derive number of unique nod IDs
-nod_uniq = nod_id0[UNIQ(nod_id0,  SORT(nod_id0))]  
-n_nod    = N_ELEMENTS(nod_uniq)  > 1 
+  ; --- Extract relevant information for all data (used to computed OB id of photometric and background frames)
+  objname = data_r.objname
+  nod_id = data_r.nod_id
+  nod_id0 = nod_id
+  cfg_id = data_r.cfg_id
+  cfg_id0 = cfg_id
+  pt_id = data_r.pt_id
+  pt_id0 = pt_id
+  obstype = data_r.obstype
+  xcen_sx = data_r.xcen_sx
+  xcen_dx = data_r.xcen_dx
+  ycen_sx = data_r.ycen_sx
+  ycen_dx = data_r.ycen_dx
+  min_fid = data_r.min_fid
+  max_fid = data_r.max_fid
+  flag = data_r.flag
 
-; -- Print info to screen and to the log
-IF info GT 0 THEN BEGIN
-  ; Extract data in DATA_IDX range
-  wav_eff = data_r.lam_cen
-  dit     = data_r.int_time
-  tgtname = data_r.objname
-  ; Print info to screen
-  IF info GT 2 THEN BEGIN
-    ; Compute the number of different parameters in the input data sequence
-    tgt_uniq  = tgtname[UNIQ(tgtname,  SORT(tgtname))]  & n_tgt  = N_ELEMENTS(tgt_uniq)  > 1  ; Distinct object name
-    lam_uniq  = wav_eff[UNIQ(wav_eff, SORT(wav_eff))]   & n_lam  = N_ELEMENTS(lam_uniq)  > 1  ; Distinct integration time
-    int_uniq  = dit[UNIQ(dit, SORT(dit))]               & n_int  = N_ELEMENTS(int_uniq)  > 1  ; Distinct central wavelengths
-    pt_uniq   = pt_id0[UNIQ(pt_id0,  SORT(pt_id0))]     & n_pt   = N_ELEMENTS(pt_uniq)   > 1  ; Distinct pointing #ID
-    ob_uniq   = ob_id0[UNIQ(ob_id0,  SORT(ob_id0))]     & n_ob   = N_ELEMENTS(ob_uniq)   > 1  ; Distinct OB #ID
+  time_obs = data_r.ut_time
+  ut_time = double(strmid(time_obs, 0, 2)) + double(strmid(time_obs, 3, 2)) / 60d + double(strmid(time_obs, 6, 2)) / 3.6d+3 + double(strmid(time_obs, 9, 3)) / 3.6d+6
+
+  ; --- Read target information (or query online catalogs if not present)
+  tgt_uniq = objname[uniq(objname, sort(objname))]
+  GET_TGT, tgt_uniq, tgt, database = pth.input_path + drs.database
+  struct_add_field, tgt, 'calfor', 'tbd'
+  struct_add_field, tgt, 'maxapr', 1d3
+
+  ; --- Assign calibrators to their science object (needed because of EEID computation).
+  ; --- Also assign the maximum aperture radius possible for each star.
+  pt_uniq = pt_id[uniq(pt_id, sort(pt_id))]
+  n_pt = n_elements(pt_uniq)
+  flag_pt = strarr(n_pt)
+  tgt_pt = flag_pt
+  max_apr = intarr(n_pt)
+  for i = 0, n_pt - 1 do begin
+    idx = where(pt_id eq pt_uniq[i])
+    flag_pt[i] = flag[idx[0]]
+    tgt_pt[i] = strlowcase(strcompress(objname[idx[0]], /remove_all))
+    ; in sub-frame mode, this doesn't capture the distance to the horizontal center but no easy solution for that at this point...
+    ; this is also only valid for SX, which encodes the position of the nulling beam. PHOTOMETRIC beam should be close
+    idx = where(pt_id eq pt_uniq[i] and ycen_sx ne 0 and xcen_sx ne 0)
+    if drs.sky_col eq 0 then max_apr[i] = min(xcen_sx[idx] mod cnf.x_chan) < min(ycen_sx[idx] mod cnf.y_chan) < min(cnf.x_chan - (xcen_sx[idx] mod cnf.x_chan)) < min(cnf.y_chan - (ycen_sx[idx] mod cnf.y_chan)) $
+    else max_apr[i] = min(ycen_sx[idx] mod cnf.y_chan) < min(cnf.y_chan - (ycen_sx[idx] mod cnf.y_chan)) ; look only in the Y direction!
+    if flag_pt[i] eq 'SCI' then begin
+      idx_tgt = where(tgt.name eq tgt_pt[i])
+      if tgt[idx_tgt].maxapr gt max_apr[i] then tgt[idx_tgt].maxapr = max_apr[i]
+    endif
+  endfor
+  ; Pre-defined list (should go in a separate file eventually)
+  READ_TABLE, 'nodrs/input/calsci_pairs.txt', date_list, ut_min, ut_max, cal_list, sci_list, first = 2, string = [3, 4], separator = ';'
+
+  ; Loop over the pointings
+  for i = 0, n_pt - 1 do begin
+    ; Current target
+    idx_tgt = where(tgt.name eq tgt_pt[i])
+    ra_tgt = tgt[idx_tgt].ra
+    de_tgt = tgt[idx_tgt].dec
+    ; If in pre-defined list, use it!
+    idx_ok = where(strlowcase(tgt_pt[i]) eq strlowcase(cal_list) and date eq date_list and ut_time[i] ge ut_min and ut_time[i] le ut_max, n_ok)
+    if n_ok eq 1 then tgt[idx_tgt].calfor = strlowcase(sci_list[idx_ok]) else begin
+      ; If CAL, find nearest SCIs
+      if flag_pt[i] eq 'CAL' then begin
+        idx_low = max(where(pt_uniq lt pt_uniq[i] and flag_pt eq 'SCI', n1))
+        if n1 gt 0 then tgt_low = tgt_pt[idx_low] else tgt_low = 'none' ; Nearest previous SCI pointings
+        idx_up = min(where(pt_uniq gt pt_uniq[i] and flag_pt eq 'SCI', n2))
+        if n2 gt 0 then tgt_up = tgt_pt[idx_up] else tgt_up = 'none' ; Nearest following SCI pointings
+        ; Current target
+        if n1 ne 0 or n2 ne 0 then begin
+          ; If not the same, find the one with the closest RA
+          if tgt_low ne tgt_up then begin
+            idx = where(tgt.name eq tgt_low, n_low)
+            if n_low ge 1 then ra_low = tgt[idx].ra else ra_low = 1d9
+            if n_low ge 1 then de_low = tgt[idx].dec else de_low = 1d9
+            idx = where(tgt.name eq tgt_up, n_up)
+            if n_up ge 1 then ra_up = tgt[idx].ra else ra_up = 1d9
+            if n_up ge 1 then de_up = tgt[idx].dec else de_up = 1d9
+            if ((ra_tgt - ra_low) ^ 2 + (de_tgt - de_low) ^ 2) lt ((ra_tgt - ra_up) ^ 2 + (de_tgt - de_up) ^ 2) then tgt[idx_tgt].calfor = tgt_low else tgt[idx_tgt].calfor = tgt_up
+          endif else tgt[idx_tgt].calfor = tgt_up
+        endif else begin
+          ; Only needed if aper_rad is 0
+          if drs.aper_rad eq 0 then begin
+            read, ttt, prompt = 'Enter science object for ' + tgt_pt[i] + ' : '
+            tgt[idx_tgt].calfor = ttt
+          endif else tgt[idx_tgt].calfor = 'UND'
+        endelse
+      endif
+    endelse
+  endfor
+
+  ; --- Consitency check
+  ; Make sure there is no missing object name
+  ; idx_missing = WHERE(obj_name EQ '?' OR obj_name EQ ' ', n_missing)
+  ; IF n_missing GE 1 THEN MESSAGE, 'Problem with object name in files : ' + STRING(file_id[idx_missing], FORMAT='(I0)') + ' (' + obj_name[idx_missing] +')'
+
+  ; --- Assign unique ID number to each line of the file
+  n_data = n_elements(objname)
+  file_id = indgen(n_data) + 1 ; I don't want 0!!!!
+
+  ; --- Assign OB id number to coherent data (so don't consider photometric and background frames in the OB id count)
+  idx_coh = where(obstype eq 1 or obstype eq 2, n_coh)
+  if n_coh gt 0 then begin
+    ob_id = intarr(n_data) - 1 ; Photometry and background frames have an OB id of -1.
+    case drs.ob_mode of
+      0: dat_id = [transpose(nod_id[idx_coh]), transpose(pt_id[idx_coh]), transpose(cfg_id[idx_coh])]
+      1: message, 'OB_MODE=1 not yet implemented'
+      2: message, 'OB_MODE=2 not yet implemented'
+      3: message, 'OB_MODE=3 not yet implemented (one OB per chop position)'
+    endcase
+    ob_id[idx_coh] = ATTRIBUTE_ID(dat_id) + 1 ; I don't want 0!!!!
+  endif else ob_id = nod_id
+  ob_id0 = ob_id
+
+  ; --- Assign background and photometric file ID for each coherent OB (only needed for null OB in principle)
+  bck_id = intarr(n_data) ; will contain the corresponding background file ID
+  pho_fid = intarr(n_data) ; will contain the corresponding photometric file ID
+  nod_pos = fix(ycen_sx / cnf.y_chan) ; this assumes that each NOD ends up in a different vertical channel (which is true for nulling)
+  for i_d = 0, n_data - 1 do begin
+    ; 1. Compute the corredponding background OB. It must be of the same pointing (and same config ID) but different nod position (+ avoid photometric frames)
+    idx_bck = where(pt_id eq pt_id[i_d] and cfg_id eq cfg_id[i_d] and ob_id ne ob_id[i_d] and obstype ne 0 and (nod_pos ne nod_pos[i_d] or obstype eq 3), n_bck)
+    if n_bck gt 0 then begin
+      file_bck = file_id[idx_bck] ; list of suitable files
+      idx_min = where(abs(file_id[i_d] - file_bck) eq min(abs(file_id[i_d] - file_bck))) ; closest ones
+      if n_elements(idx_min) gt 1 then begin ; if two, keep the one with more frames
+        tmp = max(max_fid[idx_bck[idx_min]] - min_fid[idx_bck[idx_min]], i_max)
+      endif else i_max = 0
+      bck_id[i_d] = file_bck[idx_min[i_max]] ; retain only one
+    endif else bck_id[i_d] = -1 ; no associated background file
+
+    ; 2. Compute the associated photometric file ID. Ideally, it must be of the same pointing but look in different pointings if not found
+    idx_pho = where(pt_id eq pt_id[i_d] and cfg_id eq cfg_id[i_d] and obstype eq 0 and xcen_sx ne 0 and ycen_sx ne 0, n_pho)
+    if n_pho le 0 then begin
+      print, ' No corresponding photometric file for nod ' + string(nod_id[i_d], format = '(I0)') + '. Looking in other pointings.'
+      if lun gt 0 then printf, lun, ' No corresponding photometric file for nod ' + string(nod_id[i_d], format = '(I0)') + '. Looking in other pointings.'
+      idx_pho = where(objname eq objname[i_d] and cfg_id eq cfg_id[i_d] and obstype eq 0 and xcen_sx ne 0 and ycen_sx ne 0, n_pho)
+    endif
+    if n_pho gt 0 then begin
+      fid_pho = file_id[idx_pho] ; list of suitable file IDs
+      idx_min = where(abs(file_id[i_d] - fid_pho) eq min(abs(file_id[i_d] - fid_pho))) ; closest one
+      if n_elements(idx_min) gt 1 then begin ; if two, keep the one with the more frames
+        tmp = max(max_fid[idx_pho[idx_min]] - min_fid[idx_pho[idx_min]], i_max)
+      endif else i_max = 0
+      pho_fid[i_d] = fid_pho[idx_min[i_max]] ; retain only one
+    endif else begin
+      if info gt 0 then begin
+        print, ' No corresponding photometric file for nod ' + string(nod_id[i_d], format = '(I0)')
+        if lun gt 0 then printf, lun, ' No corresponding photometric file for nod ' + string(nod_id[i_d], format = '(I0)')
+      endif
+      pho_fid[i_d] = -1 ; no associated photometric NOD
+    endelse
+  endfor
+
+  ; -- Extract data in DATA_IDX range
+  if keyword_set(data_idx) then begin
+    idx_data = where(data_r.min_fid ge data_idx[0] and data_r.max_fid le data_idx[1], n_data)
+    if n_data gt 0 then begin
+      data_r = data_r[idx_data]
+      cfg_id0 = cfg_id[idx_data] ; only used for print
+      pt_id0 = pt_id[idx_data] ; only used for print
+      nod_id0 = nod_id[idx_data] ; only used for print
+      ob_id0 = ob_id[idx_data] ; only used for print
+    endif else begin
+      message, 'No data in the DATA_IDX range', /continue
+      RETURN
+    endelse
+  endif else n_data = n_elements(obj_name)
+
+  ; -- Derive number of unique nod IDs
+  nod_uniq = nod_id0[uniq(nod_id0, sort(nod_id0))]
+  n_nod = n_elements(nod_uniq) > 1
+
+  ; -- Print info to screen and to the log
+  if info gt 0 then begin
+    ; Extract data in DATA_IDX range
+    wav_eff = data_r.lam_cen
+    dit = data_r.int_time
+    tgtname = data_r.objname
     ; Print info to screen
-    PRINT, '2. Performing flux/visibility computation over the following parameters:'
-    PRINT, ' - date                    : ', STRTRIM(date_obs)
-    PRINT, ' - target name             : ', STRTRIM(tgt_uniq)
-    PRINT, ' - central wavelength [um] : ', STRING(1D+6*lam_uniq, FORMAT="(F5.2)")
-    PRINT, ' - integration time [ms]   : ', STRING(1D+3*int_uniq, FORMAT="(I0)")
-    PRINT, ' - number of pointings     : ', STRING(n_pt, FORMAT="(I0)")
-    PRINT, ' - number of nods          : ', STRING(n_nod, FORMAT="(I0)")
-    PRINT, ' - number of OBs           : ', STRING(n_ob, FORMAT="(I0)")
-    PRINT, ' '
-    ; Print also the version number in the log file
-    IF lun GT 0 THEN BEGIN
-      PRINTF, lun, '2. Performing flux/visibility computation over the following parameters:'
-      PRINTF, lun, ' - date                    : ', STRTRIM(date_obs)
-      PRINTF, lun, ' - target name             : ', STRTRIM(tgt_uniq)
-      PRINTF, lun, ' - central wavelength [um] : ', STRING(1D+6*lam_uniq, FORMAT="(F3.1)")
-      PRINTF, lun, ' - integration time [ms]   : ', STRING(1D+3*int_uniq, FORMAT="(I0)")
-      PRINTF, lun, ' - number of pointings     : ', STRING(n_pt, FORMAT="(I0)")
-      PRINTF, lun, ' - number of nods          : ', STRING(n_nod, FORMAT="(I0)")
-      PRINTF, lun, ' - number of OBs           : ', STRING(n_ob, FORMAT="(I0)")
-      PRINTF, lun, ' '
-    ENDIF
-  ENDIF
-  
-  IF drs.flx_mode NE 2 THEN BEGIN
-    PRINT, 'Now computing flux by APERTURE PHOTOMETRY on ' + STRING(n_data, FORMAT='(I0)') + ' frames.'
-    PRINT,'      - Photometric aperture radius [pix] : ' + STRING(drs.aper_rad, FORMAT='(I0)') + ' (0: 2xEEID)'
-    PRINT,'      - Inner background radius [pix]     : ' + STRING(drs.bck_irad, FORMAT='(I0)') + ' (0: aperture radius)'
-    PRINT,'      - Outer background radius [pix]     : ' + STRING(drs.bck_orad, FORMAT='(I0)') + ' (0: channel edge)'
-  ENDIF ELSE PRINT, 'Now computing flux by PSF-FITTING on ' + STRING(n_data, FORMAT='(I0)') + ' frames.'
+    if info gt 2 then begin
+      ; Compute the number of different parameters in the input data sequence
+      tgt_uniq = tgtname[uniq(tgtname, sort(tgtname))]
+      n_tgt = n_elements(tgt_uniq) > 1 ; Distinct object name
+      lam_uniq = wav_eff[uniq(wav_eff, sort(wav_eff))]
+      n_lam = n_elements(lam_uniq) > 1 ; Distinct integration time
+      int_uniq = dit[uniq(dit, sort(dit))]
+      n_int = n_elements(int_uniq) > 1 ; Distinct central wavelengths
+      pt_uniq = pt_id0[uniq(pt_id0, sort(pt_id0))]
+      n_pt = n_elements(pt_uniq) > 1 ; Distinct pointing #ID
+      ob_uniq = ob_id0[uniq(ob_id0, sort(ob_id0))]
+      n_ob = n_elements(ob_uniq) > 1 ; Distinct OB #ID
+      ; Print info to screen
+      print, '2. Performing flux/visibility computation over the following parameters:'
+      print, ' - date                    : ', strtrim(date_obs)
+      print, ' - target name             : ', strtrim(tgt_uniq)
+      print, ' - central wavelength [um] : ', string(1d+6 * lam_uniq, format = '(F5.2)')
+      print, ' - integration time [ms]   : ', string(1d+3 * int_uniq, format = '(I0)')
+      print, ' - number of pointings     : ', string(n_pt, format = '(I0)')
+      print, ' - number of nods          : ', string(n_nod, format = '(I0)')
+      print, ' - number of OBs           : ', string(n_ob, format = '(I0)')
+      print, ' '
+      ; Print also the version number in the log file
+      if lun gt 0 then begin
+        printf, lun, '2. Performing flux/visibility computation over the following parameters:'
+        printf, lun, ' - date                    : ', strtrim(date_obs)
+        printf, lun, ' - target name             : ', strtrim(tgt_uniq)
+        printf, lun, ' - central wavelength [um] : ', string(1d+6 * lam_uniq, format = '(F3.1)')
+        printf, lun, ' - integration time [ms]   : ', string(1d+3 * int_uniq, format = '(I0)')
+        printf, lun, ' - number of pointings     : ', string(n_pt, format = '(I0)')
+        printf, lun, ' - number of nods          : ', string(n_nod, format = '(I0)')
+        printf, lun, ' - number of OBs           : ', string(n_ob, format = '(I0)')
+        printf, lun, ' '
+      endif
+    endif
 
-  ; Initiate pointing number display
-  PRINT, ' '
-  PRINT, FORMAT='("Processing nod number ", $)'
-ENDIF
-IF lun GT 0 THEN BEGIN
-  IF drs.flx_mode NE 2 THEN BEGIN
-    PRINTF,lun,' '
-    PRINTF,lun,'Flux computed by APERTURE PHOTOMETRY on ' + STRING(n_data, FORMAT='(I0)') + ' frames:'
-    PRINTF,lun,'      - Photometric aperture radius [pix] : ' + STRING(drs.aper_rad, FORMAT='(I0)') + ' (0: 2xEEID)'
-    PRINTF,lun,'      - Inner background radius [pix]     : ' + STRING(drs.bck_irad, FORMAT='(I0)') + ' (0: aperture radius)'
-    PRINTF,lun,'      - Outer background radius [pix]     : ' + STRING(drs.bck_orad, FORMAT='(I0)') + ' (0: channel edge)'
-    PRINTF,lun,' '
-  ENDIF ELSE BEGIN
-    PRINTF,lun,' '
-    PRINTF,lun,'Flux computed by PSF-FITTING on ' + STRING(n_data, FORMAT='(I0)') + 'frames.'
-    PRINTF,lun,' '
-  ENDELSE
-ENDIF
+    if drs.flx_mode ne 2 then begin
+      print, 'Now computing flux by APERTURE PHOTOMETRY on ' + string(n_data, format = '(I0)') + ' frames.'
+      print, '      - Photometric aperture radius [pix] : ' + string(drs.aper_rad, format = '(I0)') + ' (0: 2xEEID)'
+      print, '      - Inner background radius [pix]     : ' + string(drs.bck_irad, format = '(I0)') + ' (0: aperture radius)'
+      print, '      - Outer background radius [pix]     : ' + string(drs.bck_orad, format = '(I0)') + ' (0: channel edge)'
+    endif else print, 'Now computing flux by PSF-FITTING on ' + string(n_data, format = '(I0)') + ' frames.'
 
-; --- If aperture radius is set, save L1 files in a separate directory (no extra label if EEID)
-IF MAX(drs.aper_rad) NE 0 THEN drs.dir_label = drs.dir_label + '_APR' ;+ STRING(MIN(drs.aper_rad[WHERE(drs.aper_rad GT 0)]), FORMAT='(I0)')
+    ; Initiate pointing number display
+    print, ' '
+    print, format = '("Processing nod number ", $)'
+  endif
+  if lun gt 0 then begin
+    if drs.flx_mode ne 2 then begin
+      printf, lun, ' '
+      printf, lun, 'Flux computed by APERTURE PHOTOMETRY on ' + string(n_data, format = '(I0)') + ' frames:'
+      printf, lun, '      - Photometric aperture radius [pix] : ' + string(drs.aper_rad, format = '(I0)') + ' (0: 2xEEID)'
+      printf, lun, '      - Inner background radius [pix]     : ' + string(drs.bck_irad, format = '(I0)') + ' (0: aperture radius)'
+      printf, lun, '      - Outer background radius [pix]     : ' + string(drs.bck_orad, format = '(I0)') + ' (0: channel edge)'
+      printf, lun, ' '
+    endif else begin
+      printf, lun, ' '
+      printf, lun, 'Flux computed by PSF-FITTING on ' + string(n_data, format = '(I0)') + 'frames.'
+      printf, lun, ' '
+    endelse
+  endif
 
-; --- Perform flux computation (aperture photometry or PSF fitting)
-FOR i_nod = 0, n_nod-1 DO BEGIN
-  
-  ; Print info to screen
-  IF info GT 0 THEN PRINT, nod_uniq[i_nod], format='($, (x, I0))'
-  
-  ; Find most recent files of this nod
-  idx_nod  = WHERE(nod_id EQ nod_uniq[i_nod], n_cfg)
-  IF n_cfg LE 0 THEN GOTO, skip_nod
-  
-  ; Loop over the files
-  FOR i_cfg = 0, n_cfg-1 DO BEGIN
-    ; Derive file ID
-    idx_cfg = idx_nod[i_cfg]
-    fid_cur = file_id[idx_cfg]
-    ob_cur  = ob_id[idx_cfg]
-    obstype_cur = obstype[idx_cfg]
-    
-    ; Check whether this OB has already been reduced
-    IF obstype_cur EQ 0 THEN tag = 'PHOT'
-    IF obstype_cur EQ 1 THEN tag = 'FIZ'
-    IF obstype_cur EQ 2 THEN tag = 'NULL'
-    IF obstype_cur GE 3 THEN tag = 'DOANYWAY'  ; IF OBSTYPE GE 3, the flux has to be recomputed. I don't remember why but it doesn't hurt to repeat it..
-    
-    ; Skip if already exists
-    IF NOT FILE_TEST(pth.l1fits_path + drs.date_obs + drs.dir_label + pth.sep + '*_ID' + STRING(ob_cur, FORMAT='(I03)') + '*' + tag + '*.fits') OR KEYWORD_SET(RENEW) THEN BEGIN
-      
-      ; Read raw L0 file (use mean-subtracted, pca-subtracted or raw-subtracted frames)
-      CASE drs.fra_mode OF 
-        0: label = 'bckg'
-        1: label = 'raw'
-        2: label = 'pca'
-        ELSE : MESSAGE, 'Undefined frame selection mode (FRA_MODE)' 
-      ENDCASE
-      IF obstype_cur EQ 0 THEN label = 'bckg' ; 0CT 2023, updated for PCA frames. I don't remember why this bit is here. I leave it here for backward compatibility? 
+  ; --- If aperture radius is set, save L1 files in a separate directory (no extra label if EEID)
+  if max(drs.aper_rad) ne 0 then drs.dir_label = drs.dir_label + '_APR' ;+ STRING(MIN(drs.aper_rad[WHERE(drs.aper_rad GT 0)]), FORMAT='(I0)')
 
+  ; --- Perform flux computation (aperture photometry or PSF fitting)
+  for i_nod = 0, n_nod - 1 do begin
+    ; Print info to screen
+    if info gt 0 then print, nod_uniq[i_nod], format = '($, (x, I0))'
 
-      file_nod = FILE_SEARCH(pth.l0fits_path + date_obs + pth.sep + label + pth.sep + '*_N' + STRING(nod_uniq[i_nod], FORMAT='(I03)') + '*' + STRING(min_fid[idx_cfg], FORMAT='(I06)') + '-' +  $
-                             STRING(max_fid[idx_cfg], FORMAT='(I06)') + '_IMG.fits', COUNT=n0)
-      IF n0 GT 0 THEN BEGIN
-        
-        ; If more than 1 file, only keep the latest file and delete the other one
-        IF n0 GT 1 THEN BEGIN
-          finfo    = FILE_INFO(file_nod)
-          idx      = WHERE(finfo.mtime EQ MAX(finfo.mtime), COMPLEMENT=idxd)
-          FILE_DELETE, file_nod[idxd]
-          file_nod = file_nod[idx]
-        ENDIF
-        
-        ; Read image
-        img_data = LBTI_READL0RED(file_nod, HDR_DATA=hdr_data, INFO=info)
-        
-        ; Current pointing, nod, OB and file ID
-        pt_cur  = pt_id[idx_cfg]
-        cfg_cur = cfg_id[idx_cfg]
-        nod_cur = nod_id[idx_cfg]
-        
-        ; Parse beam positions
-        hdr_data.data[*].xcen_sx = xcen_sx[idx_cfg] 
-        hdr_data.data[*].ycen_sx = ycen_sx[idx_cfg] 
-        hdr_data.data[*].xcen_dx = xcen_dx[idx_cfg] 
-        hdr_data.data[*].ycen_dx = ycen_dx[idx_cfg] 
-                
-        ; Reset auxiliary positions (used by LBTI_ING2FLX to know at which additional positions to compute the flux)
-        xcen_bck = 0
-        ycen_bck = 0
-        
-        ; Assign OB id to frames and additional beam positions for background
-        ; Also assign OB number for all OBs that use this NOD for background/photometry 
-        CASE hdr_data.header.obstype OF 
-          0: BEGIN ; Photometric frames (if it exists, take OB ID of associated coherent frames, else take its own asociated ob_id)
-               idx_pho  = WHERE(pho_fid EQ fid_cur AND ob_id NE -1, n_ok)
-               IF n_ok GT 0 THEN ob_in = ob_id[idx_pho] $      ; contain all OBs that use this photometric file
-                            ELSE ob_in = -1                    ; not used, -1 to skip flux computation below
-             END
-          1: BEGIN ; Visibility frames
-               hdr_data.data[*].ob_id = ob_cur
-               idx_bck = WHERE(bck_id EQ fid_cur AND ob_id NE -1, n_ok)
-               IF n_ok GT 0 THEN BEGIN
-                 ob_in    = ob_id[idx_bck]   ; contain all OBs that use the current OB as background
-                 xcen_bck = xcen_sx[idx_bck] ; contain corresponding X positions
-                 ycen_bck = ycen_sx[idx_bck] ; contain corresponding Y positions
-               ENDIF ELSE ob_in = 0          ; not used
-             END
-          2: BEGIN ; Nulling frames 
-               hdr_data.data[*].ob_id = ob_cur               
-               idx_bck = WHERE(pt_id EQ pt_cur AND cfg_id EQ cfg_cur AND ob_id NE ob_cur AND obstype NE 0 AND nod_pos NE nod_pos[idx_cfg], n_bck)  ; will return the file ID of the opposite NODs
-               IF n_bck GE 1 THEN BEGIN
-                 nod_bck  = nod_id[idx_bck]                                                     
-                 idx_bck  = idx_bck[WHERE(ABS(nod_cur-nod_bck) EQ MIN(ABS(nod_cur-nod_bck)), n_ok)]  ; keep only the closest one(s)
-               ENDIF ELSE idx_bck = WHERE(bck_id EQ fid_cur AND ob_id NE -1, n_ok) ; old approach               
-               IF n_ok GT 0 THEN BEGIN
-                 ob_in    = ob_id[idx_bck]    ; contain all OBs that use the current OB as background
-                 xcen_bck = xcen_sx[idx_bck]  ; contain corresponding X positions
-                 ycen_bck = ycen_sx[idx_bck]  ; contain corresponding Y positions
-               ENDIF ELSE ob_in = 0           ; not used
-             END
-          3: BEGIN ; Background frames (only used if assciated to NULL nod)
-               idx_bck = WHERE(bck_id EQ fid_cur AND ob_id NE -1, n_ok)
-               IF n_ok GT 0 THEN BEGIN
-                 ob_in    = ob_id[idx_bck]     ; contain all OBs that use the current OB as background
-                 xcen_bck = xcen_sx[idx_bck]   ; contain corresponding X positions
-                 ycen_bck = ycen_sx[idx_bck]   ; contain corresponding X positions
-               ENDIF ELSE ob_in = -1           ; not used, -1 to skip flux computation below
-             END
-           ELSE: GOTO, skip_nod
-        ENDCASE
-        IF info GT 2 THEN PRINT, ' - PT, NOD, OB | BCK_OB:', pt_cur, nod_cur, ob_cur, ' | ', ob_in
-        
-        ; Compute flux/visibility for all frames in this nod and save data if allowed (don't do background frames not used in conjunction with null data)
-        IF NOT drs.skip_flx AND MAX(ob_in) NE -1 THEN LBTI_IMG2FLX, img_data, hdr_data, LOG_FILE=lun, INFO=info, PLOT=plot, NO_SAVE=no_save, OB_IN=ob_in, XCEN=xcen_bck, YCEN=ycen_bck
-        IF NOT drs.skip_vis AND MAX(ob_in) NE -1 THEN LBTI_IMG2VIS, img_data, hdr_data, LOG_FILE=lun, INFO=info, PLOT=plot, NO_SAVE=no_save, OB_IN=ob_in, XCEN=xcen_bck, YCEN=ycen_bck
-      ENDIF
-      
-    ENDIF ;ELSE PRINT, ' File ' + STRING(fid_cur, FORMAT='(I0)') + '  already exists'
-  ENDFOR
-  ; Jumping point if no file for this nod ID
-  skip_nod:
-ENDFOR
+    ; Find most recent files of this nod
+    idx_nod = where(nod_id eq nod_uniq[i_nod], n_cfg)
+    if n_cfg le 0 then goto, skip_nod
 
-t3 = SYSTIME(1)
-IF info GT 0 THEN  PRINT, ' '
-IF info GT 2 THEN  PRINT, 'Time to perform flux computation :', t3-t2 
-  
-; Jumping point if SKIP_FLX is set
-skip_flx: 
+    ; Loop over the files
+    for i_cfg = 0, n_cfg - 1 do begin
+      ; Derive file ID
+      idx_cfg = idx_nod[i_cfg]
+      fid_cur = file_id[idx_cfg]
+      ob_cur = ob_id[idx_cfg]
+      obstype_cur = obstype[idx_cfg]
 
- ; 4. ADI PROCESSING (from processed L1 frames)
-; ******************
+      ; Check whether this OB has already been reduced
+      if obstype_cur eq 0 then tag = 'PHOT'
+      if obstype_cur eq 1 then tag = 'FIZ'
+      if obstype_cur eq 2 then tag = 'NULL'
+      if obstype_cur ge 3 then tag = 'DOANYWAY' ; IF OBSTYPE GE 3, the flux has to be recomputed. I don't remember why but it doesn't hurt to repeat it..
 
-; --- Skip ADI processing if requested
-t1 = SYSTIME(1)
-IF drs.skip_adi THEN BEGIN
-  IF info GT 0 THEN PRINT, '3. Skipping ADI processing'
-  GOTO, skip_adi
-ENDIF
+      ; Skip if already exists
+      if not file_test(pth.l1Fits_path + drs.date_obs + drs.dir_label + pth.sep + '*_ID' + string(ob_cur, format = '(I03)') + '*' + tag + '*.fits') or keyword_set(renew) then begin
+        ; Read raw L0 file (use mean-subtracted, pca-subtracted or raw-subtracted frames)
+        case drs.fra_mode of
+          0: label = 'bckg'
+          1: label = 'raw'
+          2: label = 'pca'
+          else: message, 'Undefined frame selection mode (FRA_MODE)'
+        endcase
+        if obstype_cur eq 0 then label = 'bckg' ; 0CT 2023, updated for PCA frames. I don't remember why this bit is here. I leave it here for backward compatibility?
 
-; --- Print info to screen
-IF info GT 0 THEN BEGIN
-  PRINT, ' '
-  PRINT, '3. Performing ADI processing:'
-  PRINT, FORMAT='("Processing nod number ", $)'
-ENDIF
+        file_nod = file_search(pth.l0Fits_path + date_obs + pth.sep + label + pth.sep + '*_N' + string(nod_uniq[i_nod], format = '(I03)') + '*' + string(min_fid[idx_cfg], format = '(I06)') + '-' + $
+          string(max_fid[idx_cfg], format = '(I06)') + '_IMG.fits', count = n0)
+        if n0 gt 0 then begin
+          ; If more than 1 file, only keep the latest file and delete the other one
+          if n0 gt 1 then begin
+            finfo = file_info(file_nod)
+            idx = where(finfo.mtime eq max(finfo.mtime), complement = idxd)
+            file_delete, file_nod[idxd]
+            file_nod = file_nod[idx]
+          endif
 
-; --- Restore LO log file and read useful data
-datalog = pth.l0fits_path + date_obs + pth.sep + 'datalog.sav'
-IF FILE_TEST(datalog) THEN RESTORE, datalog ELSE MESSAGE, 'No data log file found!'
-objname  = data_r.objname
-lam_cen  = data_r.lam_cen
-obj_uniq = STRCOMPRESS(objname[UNIQ(objname,  SORT(objname))], /REMOVE_ALL)
-n_obj    = N_ELEMENTS(obj_uniq)  > 1  ; Distinct object name
+          ; Read image
+          img_data = LBTI_READL0RED(file_nod, hdr_data = hdr_data, info = info)
 
-; --- Loop over the objects
-FOR i_o = 0, n_obj-1 DO BEGIN
-  ; --- Derive number of wavelengths (need to be improved)
-  tgt_name = obj_uniq[i_o]
-  PRINT,  tgt_name
-  idx_obj  = WHERE(objname EQ tgt_name)
-  lam_cur  = lam_cen[idx_obj]
-  lam_uniq = lam_cur[UNIQ(lam_cur,  SORT(lam_cur))]
-  n_lam    = N_ELEMENTS(lam_uniq)
-  ; --- Loop over wavelengths
-  FOR i_lam = 0, n_lam-1 DO BEGIN  
-    ; --- Merge all files 
-    search_string = '*' + tgt_name + '*' + STRING(1D+6*lam_uniq[i_lam], FORMAT='(I0)') 
-    file = FILE_SEARCH(pth.l1fits_path + date_obs + drs.dir_label + pth.sep, search_string + '*_IMG.fits', COUNT=n0)
-    IF n0 LT 1 THEN GOTO, skip_file ELSE IF NOT drs.skip_merge THEN LBTI_MERGEL1FILES, file
-    ; --- Frame selection and cropping for all files
-    file      = FILE_SEARCH(pth.l1fits_path + date_obs + drs.dir_label + pth.sep, search_string + '*IMG_ALL.fits', COUNT=n0)
-    data_file = FILE_SEARCH(pth.l1fits_path + date_obs + drs.dir_label + pth.sep, search_string + '*DATA_ALL.fits', COUNT=nd0)
-    IF n0 LT 1 THEN GOTO, skip_file ELSE IF NOT drs.skip_sel THEN LBTI_IMGSEL, file, data_file, INFO=info, PLOT=plot;,/MEDIAN
-    ; --- Derotate (PCA or ADI)
-    file      = FILE_SEARCH(pth.l1fits_path + date_obs + drs.dir_label + pth.sep, search_string + '*IMG_SEL.fits', COUNT=n0)
-    data_file = FILE_SEARCH(pth.l1fits_path + date_obs + drs.dir_label + pth.sep, search_string + '*DATA_SEL.fits', COUNT=nd0)
-    IF n0 LT 1 THEN GOTO, skip_file ELSE LBTI_IMGDEROT, file, data_file, PLOT=plot, VERBOSE=info, /MEDIAN
-    ; --- Skipping point
-    skip_file:
-  ENDFOR
-ENDFOR
+          ; Current pointing, nod, OB and file ID
+          pt_cur = pt_id[idx_cfg]
+          cfg_cur = cfg_id[idx_cfg]
+          nod_cur = nod_id[idx_cfg]
 
-t2 = SYSTIME(1)
-IF info GT 2 THEN  PRINT, 'Time to perform ADI processing     :', t2-t1
+          ; Parse beam positions
+          hdr_data.data[*].xcen_sx = xcen_sx[idx_cfg]
+          hdr_data.data[*].ycen_sx = ycen_sx[idx_cfg]
+          hdr_data.data[*].xcen_dx = xcen_dx[idx_cfg]
+          hdr_data.data[*].ycen_dx = ycen_dx[idx_cfg]
 
-; Jumping point if SKIP_NULL is set
-skip_adi:
+          ; Reset auxiliary positions (used by LBTI_ING2FLX to know at which additional positions to compute the flux)
+          xcen_bck = 0
+          ycen_bck = 0
 
-; 5. NULL COMPUTATION
-; *******************
+          ; Assign OB id to frames and additional beam positions for background
+          ; Also assign OB number for all OBs that use this NOD for background/photometry
+          case hdr_data.header.obstype of
+            0: begin ; Photometric frames (if it exists, take OB ID of associated coherent frames, else take its own asociated ob_id)
+              idx_pho = where(pho_fid eq fid_cur and ob_id ne -1, n_ok)
+              if n_ok gt 0 then ob_in = ob_id[idx_pho] $ ; contain all OBs that use this photometric file
+              else ob_in = -1 ; not used, -1 to skip flux computation below
+            end
+            1: begin ; Visibility frames
+              hdr_data.data[*].ob_id = ob_cur
+              idx_bck = where(bck_id eq fid_cur and ob_id ne -1, n_ok)
+              if n_ok gt 0 then begin
+                ob_in = ob_id[idx_bck] ; contain all OBs that use the current OB as background
+                xcen_bck = xcen_sx[idx_bck] ; contain corresponding X positions
+                ycen_bck = ycen_sx[idx_bck] ; contain corresponding Y positions
+              endif else ob_in = 0 ; not used
+            end
+            2: begin ; Nulling frames
+              hdr_data.data[*].ob_id = ob_cur
+              idx_bck = where(pt_id eq pt_cur and cfg_id eq cfg_cur and ob_id ne ob_cur and obstype ne 0 and nod_pos ne nod_pos[idx_cfg], n_bck) ; will return the file ID of the opposite NODs
+              if n_bck ge 1 then begin
+                nod_bck = nod_id[idx_bck]
+                idx_bck = idx_bck[where(abs(nod_cur - nod_bck) eq min(abs(nod_cur - nod_bck)), n_ok)] ; keep only the closest one(s)
+              endif else idx_bck = where(bck_id eq fid_cur and ob_id ne -1, n_ok) ; old approach
+              if n_ok gt 0 then begin
+                ob_in = ob_id[idx_bck] ; contain all OBs that use the current OB as background
+                xcen_bck = xcen_sx[idx_bck] ; contain corresponding X positions
+                ycen_bck = ycen_sx[idx_bck] ; contain corresponding Y positions
+              endif else ob_in = 0 ; not used
+            end
+            3: begin ; Background frames (only used if assciated to NULL nod)
+              idx_bck = where(bck_id eq fid_cur and ob_id ne -1, n_ok)
+              if n_ok gt 0 then begin
+                ob_in = ob_id[idx_bck] ; contain all OBs that use the current OB as background
+                xcen_bck = xcen_sx[idx_bck] ; contain corresponding X positions
+                ycen_bck = ycen_sx[idx_bck] ; contain corresponding X positions
+              endif else ob_in = -1 ; not used, -1 to skip flux computation below
+            end
+            else: goto, skip_nod
+          endcase
+          if info gt 2 then print, ' - PT, NOD, OB | BCK_OB:', pt_cur, nod_cur, ob_cur, ' | ', ob_in
 
-; --- Compute null (if nulling data)
-t3 = SYSTIME(1)
-IF drs.skip_null THEN BEGIN
-  IF info GT 0 THEN PRINT, '4. Skipping null computation'
-  GOTO, skip_null
-ENDIF
-IF info GT 0 THEN PRINT, ' '
+          ; Compute flux/visibility for all frames in this nod and save data if allowed (don't do background frames not used in conjunction with null data)
+          if not drs.skip_flx and max(ob_in) ne -1 then LBTI_IMG2FLX, img_data, hdr_data, log_file = lun, info = info, plot = plot, no_save = no_save, ob_in = ob_in, xcen = xcen_bck, ycen = ycen_bck
+          if not drs.skip_vis and max(ob_in) ne -1 then LBTI_IMG2VIS, img_data, hdr_data, log_file = lun, info = info, plot = plot, no_save = no_save, ob_in = ob_in, xcen = xcen_bck, ycen = ycen_bck
+        endif
+      endif ; ELSE PRINT, ' File ' + STRING(fid_cur, FORMAT='(I0)') + '  already exists'
+    endfor
+    ; Jumping point if no file for this nod ID
+    skip_nod:
+  endfor
 
-IF info GT 0 THEN PRINT, '4. Now converting flux to null.'
-LBTI_FLX2NULL, date, OB_IDX=ob_idx, LOG_FILE=lun, INFO=info, PLOT=plot, NO_MULTI=no_multi, NO_SAVE=no_save, RENEW=renew
-t4 = SYSTIME(1)
-IF info GT 2 THEN  PRINT, 'Time to perform null computation     :', t4-t3
+  t3 = systime(1)
+  if info gt 0 then print, ' '
+  if info gt 2 then print, 'Time to perform flux computation :', t3 - t2
 
-; Jumping point if SKIP_NULL is set
-skip_null:
+  ; Jumping point if SKIP_FLX is set
+  skip_flx:
 
-; --- Print reduction time to the log file and close it
-IF info GT 2 THEN  PRINT, 'Total time to perform data reduction :', SYSTIME(1)-t0
-IF lun GT 0 THEN BEGIN
-  PRINTF,lun, ' '
-  PRINTF,lun, 'Total time to perform data reduction   :', SYSTIME(1)-t0
-  PRINTF,lun, ' '
-  CLOSE, lun
-  FREE_LUN, lun
-ENDIF
+  ; 4. ADI PROCESSING (from processed L1 frames)
+  ; ******************
 
-END
+  ; --- Skip ADI processing if requested
+  t1 = systime(1)
+  if drs.skip_adi then begin
+    if info gt 0 then print, '3. Skipping ADI processing'
+    goto, skip_adi
+  endif
+
+  ; --- Print info to screen
+  if info gt 0 then begin
+    print, ' '
+    print, '3. Performing ADI processing:'
+    print, format = '("Processing nod number ", $)'
+  endif
+
+  ; --- Restore LO log file and read useful data
+  datalog = pth.l0Fits_path + date_obs + pth.sep + 'datalog.sav'
+  if file_test(datalog) then restore, datalog else message, 'No data log file found!'
+  objname = data_r.objname
+  lam_cen = data_r.lam_cen
+  obj_uniq = strcompress(objname[uniq(objname, sort(objname))], /remove_all)
+  n_obj = n_elements(obj_uniq) > 1 ; Distinct object name
+
+  ; --- Loop over the objects
+  for i_o = 0, n_obj - 1 do begin
+    ; --- Derive number of wavelengths (need to be improved)
+    tgt_name = obj_uniq[i_o]
+    print, tgt_name
+    idx_obj = where(objname eq tgt_name)
+    lam_cur = lam_cen[idx_obj]
+    lam_uniq = lam_cur[uniq(lam_cur, sort(lam_cur))]
+    n_lam = n_elements(lam_uniq)
+    ; --- Loop over wavelengths
+    for i_lam = 0, n_lam - 1 do begin
+      ; --- Merge all files
+      search_string = '*' + tgt_name + '*' + string(1d+6 * lam_uniq[i_lam], format = '(I0)')
+      file = file_search(pth.l1Fits_path + date_obs + drs.dir_label + pth.sep, search_string + '*_IMG.fits', count = n0)
+      if n0 lt 1 then goto, skip_file else if not drs.skip_merge then LBTI_MERGEL1FILES, file
+      ; --- Frame selection and cropping for all files
+      file = file_search(pth.l1Fits_path + date_obs + drs.dir_label + pth.sep, search_string + '*IMG_ALL.fits', count = n0)
+      data_file = file_search(pth.l1Fits_path + date_obs + drs.dir_label + pth.sep, search_string + '*DATA_ALL.fits', count = nd0)
+      if n0 lt 1 then goto, skip_file else if not drs.skip_sel then LBTI_IMGSEL, file, data_file, info = info, plot = plot ; ,/MEDIAN
+      ; --- Derotate (PCA or ADI)
+      file = file_search(pth.l1Fits_path + date_obs + drs.dir_label + pth.sep, search_string + '*IMG_SEL.fits', count = n0)
+      data_file = file_search(pth.l1Fits_path + date_obs + drs.dir_label + pth.sep, search_string + '*DATA_SEL.fits', count = nd0)
+      if n0 lt 1 then goto, skip_file else LBTI_IMGDEROT, file, data_file, plot = plot, verbose = info, /median
+      ; --- Skipping point
+      skip_file:
+    endfor
+  endfor
+
+  t2 = systime(1)
+  if info gt 2 then print, 'Time to perform ADI processing     :', t2 - t1
+
+  ; Jumping point if SKIP_NULL is set
+  skip_adi:
+
+  ; 5. NULL COMPUTATION
+  ; *******************
+
+  ; --- Compute null (if nulling data)
+  t3 = systime(1)
+  if drs.skip_null then begin
+    if info gt 0 then print, '4. Skipping null computation'
+    goto, skip_null
+  endif
+  if info gt 0 then print, ' '
+
+  if info gt 0 then print, '4. Now converting flux to null.'
+  LBTI_FLX2NULL, date, ob_idx = ob_idx, log_file = lun, info = info, plot = plot, no_multi = no_multi, no_save = no_save, renew = renew
+  t4 = systime(1)
+  if info gt 2 then print, 'Time to perform null computation     :', t4 - t3
+
+  ; Jumping point if SKIP_NULL is set
+  skip_null:
+
+  ; --- Print reduction time to the log file and close it
+  if info gt 2 then print, 'Total time to perform data reduction :', systime(1) - t0
+  if lun gt 0 then begin
+    printf, lun, ' '
+    printf, lun, 'Total time to perform data reduction   :', systime(1) - t0
+    printf, lun, ' '
+    close, lun
+    free_lun, lun
+  endif
+end

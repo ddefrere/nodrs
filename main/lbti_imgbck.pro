@@ -1,6 +1,6 @@
 ;+
 ; NAME: LBTI_IMGBCK
-; 
+;
 ; PURPOSE:
 ;   This procedure performs the chop/nod background subtraction and save the data.
 ;
@@ -45,134 +45,134 @@
 ;   Version 2.9,  15-JUL-2016, DD: added cursor
 ;   Version 3.0,  11-FEB-2017, DD: now save both raw and background-subtracted cubes
 ;   Version 3.1,  11-APR-2017, DD: implemented ROIs
+;
+pro LBTI_IMGBCK, img_in, hdr_in, bckg_path = bckg_path, log_file = log_file, no_save = no_save, info = info, plot = plot
+  compile_opt idl2
+  ;
+  ; Define operational parameters
+  common GLOBAL, prm, cnf, wav, tgt, pth, drs
+  on_error, 0
 
-PRO LBTI_IMGBCK, img_in, hdr_in, BCKG_PATH=bckg_path,  LOG_FILE=log_file, NO_SAVE=no_save, INFO=info, PLOT=plot  
-                                                                                                                                     ;     
-; Define operational parameters
-COMMON GLOBAL, prm, cnf, wav, tgt, pth, drs
-ON_ERROR, 0
+  ; At this point, data might still be LONG or INT if no flat fielding
+  ; Convert to FLOAT or DOUBLE. Make a copy because we don't want to modify img_in
+  if drs.precision then img_cur = double(img_in) $
+  else img_cur = float(img_in)
 
-; At this point, data might still be LONG or INT if no flat fielding
-; Convert to FLOAT or DOUBLE. Make a copy because we don't want to modify img_in
-IF drs.precision THEN img_cur = DOUBLE(img_in) $
-                 ELSE img_cur = FLOAT(img_in)
+  ; Extract background data
+  idx_bck = where(hdr_in.bck_nod ne 0, complement = idx_nod, n_bck)
+  if n_bck le 0 then begin
+    message, 'No background frames found!', /continue
+    skip_bck = 1
+  endif else if drs.bckg_mode eq 0 then skip_bck = 1 else skip_bck = 0
+  if n_elements(idx_nod) le 0 then message, 'No science frames found!!!'
 
-; Extract background data
-idx_bck = WHERE(hdr_in.bck_nod NE 0, COMPLEMENT=idx_nod, n_bck)
-IF n_bck LE 0 THEN BEGIN
-  MESSAGE, 'No background frames found!', /CONTINUE
-  skip_bck = 1
-ENDIF ELSE IF drs.bckg_mode EQ 0 THEN skip_bck = 1 ELSE skip_bck = 0
-IF N_ELEMENTS(idx_nod) LE 0 THEN MESSAGE, 'No science frames found!!!'
- 
-; Extract nod and background HDR data
-hdr_nod = hdr_in[idx_nod]
-hdr_bck = hdr_in[idx_bck]
+  ; Extract nod and background HDR data
+  hdr_nod = hdr_in[idx_nod]
+  hdr_bck = hdr_in[idx_bck]
 
-; Compute nod "parity" 
-nod_id  = hdr_nod[0].nod_id
-idx_tmp = WHERE(hdr_bck.nod_id LT nod_id, nl)
-idx_tmp = WHERE(hdr_bck.nod_id GT nod_id, nu)
-hdr_nod.bck_nod = (-nl+nu)/FLOAT(nl+nu)
+  ; Compute nod "parity"
+  nod_id = hdr_nod[0].nod_id
+  idx_tmp = where(hdr_bck.nod_id lt nod_id, nl)
+  idx_tmp = where(hdr_bck.nod_id gt nod_id, nu)
+  hdr_nod.bck_nod = (-nl + nu) / float(nl + nu)
 
-; Compute mean/median if negative background mode
-IF KEYWORD_SET(bckg_path) THEN BEGIN
-   img_bck = LBTI_READDATA(bckg_path, HDR_DATA=hdr_bck, INFO=info)
-   med_bck = LBTI_IMGMED(img_bck, HDR_DATA=hdr_bck, MEAN=drs.img_mode, PRECISION=drs.precision, INFO=0)
-ENDIF ELSE BEGIN
-  IF drs.bckg_mode LE 0 THEN med_bck = LBTI_IMGMED(img_cur[*,*,idx_bck], HDR_DATA=hdr_bck, MEAN=drs.img_mode, PRECISION=drs.precision, INFO=0) $
-                        ELSE med_bck = img_cur[*,*,idx_bck]
-ENDELSE
+  ; Compute mean/median if negative background mode
+  if keyword_set(bckg_path) then begin
+    img_bck = LBTI_READDATA(bckg_path, hdr_data = hdr_bck, info = info)
+    med_bck = LBTI_IMGMED(img_bck, hdr_data = hdr_bck, mean = drs.img_mode, precision = drs.precision, info = 0)
+  endif else begin
+    if drs.bckg_mode le 0 then med_bck = LBTI_IMGMED(img_cur[*, *, idx_bck], hdr_data = hdr_bck, mean = drs.img_mode, precision = drs.precision, info = 0) $
+    else med_bck = img_cur[*, *, idx_bck]
+  endelse
 
-; If bckg_mode is 0, don't do background subtraction
-IF drs.bckg_mode EQ 0 THEN hdr_nod.n_frbck = 0 ELSE hdr_nod.n_frbck = n_bck
-   
-; Derive the number of instrumental configurations of the current nod
-cfg_id   = hdr_nod.cfg_id
-cfg_uniq = cfg_id[UNIQ(cfg_id,  SORT(cfg_id))]
-n_cfg    = N_ELEMENTS(cfg_uniq)
+  ; If bckg_mode is 0, don't do background subtraction
+  if drs.bckg_mode eq 0 then hdr_nod.n_frbck = 0 else hdr_nod.n_frbck = n_bck
 
-; Loop over the instrumental configurations
-FOR i_cfg = 0, n_cfg-1 DO BEGIN
-  
-  ; Extract data of the current configuration
-  idx_cfg = WHERE(cfg_id EQ cfg_uniq[i_cfg], nfr, /NULL)
-  hdr_cfg = hdr_nod[idx_cfg]     ; HDR for image of the current nod and config
-  idx_img = idx_nod[idx_cfg]     ; IDX for image of the current nod and config
-    
-  ; Save RAW image cube
-  IF NOT KEYWORD_SET(NO_SAVE) THEN LBTI_SAVEL0RED, img_cur[*,*,idx_img], hdr_cfg, SUB_DIR='raw', /SAVEMEDIAN ;(don't save median to speed up code)
-  
-  ; Now perform background subtraction and find beam position
-  IF NOT skip_bck THEN BEGIN
-    ; Index of background frames of this configuration
-    idx_tmp = WHERE(hdr_cfg[0].cfg_id EQ hdr_bck.cfg_id, na)
-    
-    ; If background frames found, process
-    IF na GT 0 THEN BEGIN  
-      ; Loop over the frames, subtract nod image, and clean frame
-      ; i_fr MOD na to account for both background modes
-      FOR ifr = 0, nfr-1 DO img_cur[0,0,idx_img[ifr]] = LBTI_CLEANIMG((img_cur[*,*,idx_img[ifr]]-med_bck[*,*,idx_tmp[ifr MOD na]]), NOMIC=cnf.nomic, LMIRCAM=cnf.lmircam) 
-                                         
-      ; Compute mean nodding frequency (in seconds)...TO BE CORRECTED 
-      hdr_cfg.nod_frq = ABS(MEAN(hdr_cfg.mjd_obs)-MEAN(hdr_bck[idx_tmp].mjd_obs))*24*60*60
-      
-      ; Find beam for this configuration and store results (if not a background frame)  
-      ; Good centroid must be computed on close-loop frames!!! (but we save all images for diagnostic)
-      ; THIS SHOULD BE IMPROVED (SEE LBTI_MASTERLOG AND HOW TO FLAG OPEN LOOP FRAMES)
-      obstype = hdr_cfg[0].obstype
-      CASE obstype  OF
-        ; 0: PHOTOMETRY. We request that both AO loops are closed
-        0: idx_keep = WHERE(hdr_cfg.dloopon EQ 1 AND hdr_cfg.sloopon EQ 1, nfr)
-        ; 1: FIZEAU. We request that both AO loops are closed
-        1: idx_keep = WHERE(hdr_cfg.dloopon EQ 1 AND hdr_cfg.sloopon EQ 1, nfr)
-        ; 2: NULLING. We request that both AO loops and the phase loop are closed
-        2: idx_keep = WHERE(hdr_cfg.dloopon EQ 1 AND hdr_cfg.sloopon EQ 1 AND hdr_cfg.pcclosed EQ 1, nfr)
-        ; 3: BACKGROUND. No conditions
-        3: idx_keep = LINDGEN(nfr)
-        ; 4: TEST. No conditions
-        4: idx_keep = LINDGEN(nfr)
-        ELSE: MESSAGE, 'Unknown OBSTYPE'
-      ENDCASE 
-      
-      ; If enough closed-loop frames, find centroid
-      IF nfr LE 0 THEN BEGIN
-        MESSAGE, 'Not enough closed-loop frames!! This nod will be discarded from now on.', /CONTINUE
-        hdr_cfg[*].xcen[*] = 0
-        hdr_cfg[*].ycen[*] = 0
-      ENDIF ELSE BEGIN
-        ; Define ROIs
-        IF MAX(hdr_cfg[0].roi) EQ 0 THEN roi = [0,0,N_ELEMENTS(img_cur[*,0,0])-1,N_ELEMENTS(img_cur[0,*,0])-1] ELSE roi = hdr_cfg[0].roi
-        ; Compute MEDIAN
-        IF nfr GT 1 THEN img_med = MEDIAN(img_cur[roi[0]:roi[2],roi[1]:roi[3],idx_img[idx_keep]], DIMENSION=3) ELSE img_med = img_cur[roi[0]:roi[2],roi[1]:roi[3],idx_img[idx_keep]]
-        ; Compute number of beams
-        IF obstype EQ 0 AND drs.overlap EQ 0 THEN n_beam = 2 ELSE n_beam = 1
-        ; run beam finding routine
-        IF drs.xcen[0] EQ 0 AND drs.ycen[0] EQ 0 AND drs.no_find NE 1 AND obstype NE 3 THEN BEGIN
-          data = IMG_FINDBEAM(img_med, cnf.psf_pix, AUTO_BEAM=drs.auto_beam, CURSOR=drs.cursor, EDGE=[cnf.x_chan,cnf.y_chan], FIT_MODE=3, $
-                              N_BEAM=n_beam, PIXSIZE=cnf.pix_size, INFO=info, PLOT=plot)
-          FOR i_beam=0, n_beam-1 DO BEGIN
-            hdr_cfg[*].xcen[i_beam]   = data.beam_pos[i_beam,0] + roi[0]
-            hdr_cfg[*].ycen[i_beam]   = data.beam_pos[i_beam,1] + roi[1]
-            hdr_cfg[*].fwhm_x[i_beam] = data.fwhm_fit[i_beam,0]
-            hdr_cfg[*].fwhm_y[i_beam] = data.fwhm_fit[i_beam,1]
-            hdr_cfg[*].slope[i_beam]  = data.slope[i_beam]
-          ENDFOR
-        ENDIF ELSE BEGIN
-          hdr_cfg[*].xcen = drs.xcen
-          hdr_cfg[*].ycen = drs.ycen
-        ENDELSE
-      ENDELSE ; End on the number of closed-loop frames
-    ENDIF ELSE MESSAGE, "No corresponding background frames for file " + hdr_cfg[0].filename, /CONTINUE
-    
-    ; Save background-subtracted image cube
-    IF NOT KEYWORD_SET(NO_SAVE) THEN LBTI_SAVEL0RED, img_cur[*,*,idx_img], hdr_cfg, SUB_DIR='bckg', /SAVEMEDIAN ;(don't save median to speed up code)
-  ENDIF 
+  ; Derive the number of instrumental configurations of the current nod
+  cfg_id = hdr_nod.cfg_id
+  cfg_uniq = cfg_id[uniq(cfg_id, sort(cfg_id))]
+  n_cfg = n_elements(cfg_uniq)
 
-  ; Update datalog file
-  sav_path = pth.l0fits_path + drs.date_obs + pth.sep
-  IF NOT FILE_TEST(sav_path) THEN FILE_MKDIR, sav_path
-  LBTI_DATALOG, sav_path + 'datalog.sav', hdr_cfg
-  WRITE_DATALOG, drs.date_obs, INSTRUM=drs.instrum
-ENDFOR ; end of the loop on the instrumental setups of this NOD 
-END
+  ; Loop over the instrumental configurations
+  for i_cfg = 0, n_cfg - 1 do begin
+    ; Extract data of the current configuration
+    idx_cfg = where(cfg_id eq cfg_uniq[i_cfg], nfr, /null)
+    hdr_cfg = hdr_nod[idx_cfg] ; HDR for image of the current nod and config
+    idx_img = idx_nod[idx_cfg] ; IDX for image of the current nod and config
+
+    ; Save RAW image cube
+    if not keyword_set(no_save) then LBTI_SAVEL0RED, img_cur[*, *, idx_img], hdr_cfg, sub_dir = 'raw', /savemedian ; (don't save median to speed up code)
+
+    ; Now perform background subtraction and find beam position
+    if not skip_bck then begin
+      ; Index of background frames of this configuration
+      idx_tmp = where(hdr_cfg[0].cfg_id eq hdr_bck.cfg_id, na)
+
+      ; If background frames found, process
+      if na gt 0 then begin
+        ; Loop over the frames, subtract nod image, and clean frame
+        ; i_fr MOD na to account for both background modes
+        for ifr = 0, nfr - 1 do img_cur[0, 0, idx_img[ifr]] = LBTI_CLEANIMG((img_cur[*, *, idx_img[ifr]] - med_bck[*, *, idx_tmp[ifr mod na]]), nomic = cnf.nomic, lmircam = cnf.lmircam)
+
+        ; Compute mean nodding frequency (in seconds)...TO BE CORRECTED
+        hdr_cfg.nod_frq = abs(mean(hdr_cfg.mjd_obs) - mean(hdr_bck[idx_tmp].mjd_obs)) * 24 * 60 * 60
+
+        ; Find beam for this configuration and store results (if not a background frame)
+        ; Good centroid must be computed on close-loop frames!!! (but we save all images for diagnostic)
+        ; THIS SHOULD BE IMPROVED (SEE LBTI_MASTERLOG AND HOW TO FLAG OPEN LOOP FRAMES)
+        obstype = hdr_cfg[0].obstype
+        case obstype of
+          ; 0: PHOTOMETRY. We request that both AO loops are closed
+          0: idx_keep = where(hdr_cfg.dloopon eq 1 and hdr_cfg.sloopon eq 1, nfr)
+          ; 1: FIZEAU. We request that both AO loops are closed
+          1: idx_keep = where(hdr_cfg.dloopon eq 1 and hdr_cfg.sloopon eq 1, nfr)
+          ; 2: NULLING. We request that both AO loops and the phase loop are closed
+          2: idx_keep = where(hdr_cfg.dloopon eq 1 and hdr_cfg.sloopon eq 1 and hdr_cfg.pcclosed eq 1, nfr)
+          ; 3: BACKGROUND. No conditions
+          3: idx_keep = lindgen(nfr)
+          ; 4: TEST. No conditions
+          4: idx_keep = lindgen(nfr)
+          else: message, 'Unknown OBSTYPE'
+        endcase
+
+        ; If enough closed-loop frames, find centroid
+        if nfr le 0 then begin
+          message, 'Not enough closed-loop frames!! This nod will be discarded from now on.', /continue
+          hdr_cfg[*].xcen[*] = 0
+          hdr_cfg[*].ycen[*] = 0
+        endif else begin
+          ; Define ROIs
+          if max(hdr_cfg[0].ROI) eq 0 then roi = [0, 0, n_elements(img_cur[*, 0, 0]) - 1, n_elements(img_cur[0, *, 0]) - 1] else roi = hdr_cfg[0].ROI
+          ; Compute MEDIAN
+          if nfr gt 1 then img_med = median(img_cur[roi[0] : roi[2], roi[1] : roi[3], idx_img[idx_keep]], dimension = 3) else img_med = img_cur[roi[0] : roi[2], roi[1] : roi[3], idx_img[idx_keep]]
+          ; Compute number of beams
+          if obstype eq 0 and drs.overlap eq 0 then n_beam = 2 else n_beam = 1
+          ; run beam finding routine
+          if drs.xcen[0] eq 0 and drs.ycen[0] eq 0 and drs.no_find ne 1 and obstype ne 3 then begin
+            data = IMG_FINDBEAM(img_med, cnf.psf_pix, auto_beam = drs.auto_beam, cursor = drs.cursor, edge = [cnf.x_chan, cnf.y_chan], fit_mode = 3, $
+              n_beam = n_beam, pixsize = cnf.pix_size, info = info, plot = plot)
+            for i_beam = 0, n_beam - 1 do begin
+              hdr_cfg[*].xcen[i_beam] = data.beam_pos[i_beam, 0] + roi[0]
+              hdr_cfg[*].ycen[i_beam] = data.beam_pos[i_beam, 1] + roi[1]
+              hdr_cfg[*].fwhm_x[i_beam] = data.fwhm_fit[i_beam, 0]
+              hdr_cfg[*].fwhm_y[i_beam] = data.fwhm_fit[i_beam, 1]
+              hdr_cfg[*].slope[i_beam] = data.slope[i_beam]
+            endfor
+          endif else begin
+            hdr_cfg[*].xcen = drs.xcen
+            hdr_cfg[*].ycen = drs.ycen
+          endelse
+        endelse ; End on the number of closed-loop frames
+      endif else message, 'No corresponding background frames for file ' + hdr_cfg[0].filename, /continue
+
+      ; Save background-subtracted image cube
+      if not keyword_set(no_save) then LBTI_SAVEL0RED, img_cur[*, *, idx_img], hdr_cfg, sub_dir = 'bckg', /savemedian ; (don't save median to speed up code)
+    endif
+
+    ; Update datalog file
+    sav_path = pth.l0Fits_path + drs.date_obs + pth.sep
+    if not file_test(sav_path) then file_mkdir, sav_path
+    LBTI_DATALOG, sav_path + 'datalog.sav', hdr_cfg
+    WRITE_DATALOG, drs.date_obs, instrum = drs.instrum
+  endfor ; end of the loop on the instrumental setups of this NOD
+end
