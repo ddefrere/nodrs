@@ -124,6 +124,7 @@
 ;   Version 9.3, 31-JAN-2020, DD: Cleaned some keyword definition
 ;   Version 9.4, 10-AUG-2020, DD: Now do not limit the aperture size in the X direction when drs.sky_col is set to 1
 ;   Version 9.5, 15-OCT-2023, DD: Updated for FRA_MODE=2 (i.e., PCA background subtraction)
+;   Version 9.6, 04-SEP-2024, DD: Added FRA_MODE=3 (mean) and FRA_MODE=4 (median). FRA_MODE=0 is now legacy
 
 pro LBTI_DRS, date, cfg_file, $ ; Mandatory inputs (date and config file)
   bad_idx = bad_idx, bckg_idx = bckg_idx, dark_idx = dark_idx, data_idx = data_idx, flat_idx = flat_idx, nod_idx = nod_idx, ob_idx = ob_idx, $ ; Optional inputs (file index, superseed keywords)
@@ -809,9 +810,11 @@ pro LBTI_DRS, date, cfg_file, $ ; Mandatory inputs (date and config file)
       if not file_test(pth.l1Fits_path + drs.date_obs + drs.dir_label + pth.sep + '*_ID' + string(ob_cur, format = '(I03)') + '*' + tag + '*.fits') or keyword_set(renew) then begin
         ; Read raw L0 file (use mean-subtracted, pca-subtracted or raw-subtracted frames)
         case drs.fra_mode of
-          0: label = 'bckg'
+          0: label = 'bckg' ; Legacy value used in the survey papers and including open-loop frames
           1: label = 'raw'
           2: label = 'pca'
+          3: label = 'mean'
+          4: label = 'med'
           else: message, 'Undefined frame selection mode (FRA_MODE)'
         endcase
         if obstype_cur eq 0 then label = 'bckg' ; 0CT 2023, updated for PCA frames. I don't remember why this bit is here. I leave it here for backward compatibility?

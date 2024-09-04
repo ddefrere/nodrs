@@ -45,6 +45,7 @@
 ;   Version 2.9,  15-JUL-2016, DD: added cursor
 ;   Version 3.0,  11-FEB-2017, DD: now save both raw and background-subtracted cubes
 ;   Version 3.1,  11-APR-2017, DD: implemented ROIs
+;   Version 3.2,  04-SEP-2024, DD: create different folder for different IMG_MODE
 ;
 pro LBTI_IMGBCK, img_in, hdr_in, bckg_path = bckg_path, log_file = log_file, no_save = no_save, info = info, plot = plot
   compile_opt idl2
@@ -166,7 +167,13 @@ pro LBTI_IMGBCK, img_in, hdr_in, bckg_path = bckg_path, log_file = log_file, no_
       endif else message, 'No corresponding background frames for file ' + hdr_cfg[0].filename, /continue
 
       ; Save background-subtracted image cube
-      if not keyword_set(no_save) then LBTI_SAVEL0RED, img_cur[*, *, idx_img], hdr_cfg, sub_dir = 'bckg', /savemedian ; (don't save median to speed up code)
+      case drs.img_mode of  ;Image combination mode (0: median, 1: mean, 2: resistant mean)
+        0: sub_dir = 'med'
+        1: sub_dir = 'mean'
+        2: sub_dir = 'resm'
+        else: message, 'Unknown IMG_MODE'
+      endcase
+      if not keyword_set(no_save) then LBTI_SAVEL0RED, img_cur[*, *, idx_img], hdr_cfg, sub_dir = sub_dir, /savemedian ; (don't save median to speed up code)
     endif
 
     ; Update datalog file
