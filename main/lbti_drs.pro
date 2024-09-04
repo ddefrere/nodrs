@@ -189,7 +189,7 @@ pro LBTI_DRS, date, cfg_file, $ ; Mandatory inputs (date and config file)
   date_obs = '20' + strmid(date, 0, 2) + '-' + strmid(date, 2, 2) + '-' + strmid(date, 4, 2)
 
   ; Parse additional info to drs structure
-  drs = create_struct(drs, 'VERSION', 9.5, 'DATE', '15-OCT-2023', 'DATE_OBS', date_obs)
+  drs = create_struct(drs, 'VERSION', 9.6, 'DATE', '04-SEP-2024', 'DATE_OBS', date_obs)
 
   ; INITIALIZE LOG AND TERMINAL OUTPUT
   ; **********************************
@@ -352,7 +352,13 @@ pro LBTI_DRS, date, cfg_file, $ ; Mandatory inputs (date and config file)
   t0 = systime(1)
   for i_nod = 0, n_nod - 1 do begin
     ; If file already exists, skip
-    if not file_test(pth.l0Fits_path + date_obs + pth.sep + 'bckg' + pth.sep + '*_N' + string(nod_uniq[i_nod], format = '(I03)') + '*IMG.fits') or keyword_set(renew) then begin
+    case drs.img_mode of  ;Image combination mode (0: median, 1: mean, 2: resistant mean)
+      0: sub_dir = 'med'
+      1: sub_dir = 'mean'
+      2: sub_dir = 'resm'
+      else: message, 'Unknown IMG_MODE'
+    endcase
+    if not file_test(pth.l0Fits_path + date_obs + pth.sep + sub_dir + pth.sep + '*_N' + string(nod_uniq[i_nod], format = '(I03)') + '*IMG.fits') or keyword_set(renew) then begin
       ; Init time stamp
       tn = systime(1)
 
