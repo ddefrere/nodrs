@@ -352,7 +352,7 @@ pro LBTI_DRS, date, cfg_file, $ ; Mandatory inputs (date and config file)
   t0 = systime(1)
   for i_nod = 0, n_nod - 1 do begin
     ; If file already exists, skip
-    case drs.img_mode of  ;Image combination mode (0: median, 1: mean, 2: resistant mean)
+    case drs.img_mode of ; Image combination mode (0: median, 1: mean, 2: resistant mean)
       0: sub_dir = 'med'
       1: sub_dir = 'mean'
       2: sub_dir = 'resm'
@@ -899,7 +899,7 @@ pro LBTI_DRS, date, cfg_file, $ ; Mandatory inputs (date and config file)
           ; Compute flux/visibility for all frames in this nod and save data if allowed (don't do background frames not used in conjunction with null data)
           if not drs.skip_flx and max(ob_in) ne -1 then LBTI_IMG2FLX, img_data, hdr_data, log_file = lun, info = info, plot = plot, no_save = no_save, ob_in = ob_in, xcen = xcen_bck, ycen = ycen_bck
           if not drs.skip_vis and max(ob_in) ne -1 then LBTI_IMG2VIS, img_data, hdr_data, log_file = lun, info = info, plot = plot, no_save = no_save, ob_in = ob_in, xcen = xcen_bck, ycen = ycen_bck
-        endif
+        endif else print, ' File for nod  ' + string(nod_uniq[i_nod], format = '(I0)') + '  not found'
       endif ; ELSE PRINT, ' File ' + STRING(fid_cur, FORMAT='(I0)') + '  already exists'
     endfor
     ; Jumping point if no file for this nod ID
