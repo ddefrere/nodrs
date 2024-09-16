@@ -190,7 +190,7 @@ pro LBTI_DRS, date, cfg_file, $ ; Mandatory inputs (date and config file)
   date_obs = '20' + strmid(date, 0, 2) + '-' + strmid(date, 2, 2) + '-' + strmid(date, 4, 2)
 
   ; Parse additional info to drs structure
-  drs = create_struct(drs, 'VERSION', 9.6, 'DATE', '04-SEP-2024', 'DATE_OBS', date_obs)
+  drs = create_struct(drs, 'VERSION', 9.7, 'DATE', '1§-SEP-2024', 'DATE_OBS', date_obs)
 
   ; INITIALIZE LOG AND TERMINAL OUTPUT
   ; **********************************
@@ -836,6 +836,9 @@ pro LBTI_DRS, date, cfg_file, $ ; Mandatory inputs (date and config file)
             file_delete, file_nod[idxd]
             file_nod = file_nod[idx]
           endif
+
+          ; Print some stuff
+          PRINT, 'Now computing flux of file :' + file_nod
 
           ; Read image
           img_data = LBTI_READL0RED(file_nod, hdr_data = hdr_data, info = info)
