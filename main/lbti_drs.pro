@@ -125,6 +125,7 @@
 ;   Version 9.4, 10-AUG-2020, DD: Now do not limit the aperture size in the X direction when drs.sky_col is set to 1
 ;   Version 9.5, 15-OCT-2023, DD: Updated for FRA_MODE=2 (i.e., PCA background subtraction)
 ;   Version 9.6, 04-SEP-2024, DD: Added FRA_MODE=3 (mean) and FRA_MODE=4 (median). FRA_MODE=0 is now legacy
+;   Version 9.7, 16-SEP-2024, DD: Activated PCA-background frames for PCA too
 
 pro LBTI_DRS, date, cfg_file, $ ; Mandatory inputs (date and config file)
   bad_idx = bad_idx, bckg_idx = bckg_idx, dark_idx = dark_idx, data_idx = data_idx, flat_idx = flat_idx, nod_idx = nod_idx, ob_idx = ob_idx, $ ; Optional inputs (file index, superseed keywords)
@@ -823,7 +824,7 @@ pro LBTI_DRS, date, cfg_file, $ ; Mandatory inputs (date and config file)
           4: label = 'med'
           else: message, 'Undefined frame selection mode (FRA_MODE)'
         endcase
-        if obstype_cur eq 0 then label = 'bckg' ; 0CT 2023, updated for PCA frames. I don't remember why this bit is here. I leave it here for backward compatibility?
+        ; if obstype_cur eq 0 then label = 'bckg' ; 0CT 2023, updated for PCA frames. I don't remember why this bit is here. I leave it here for backward compatibility?
 
         file_nod = file_search(pth.l0Fits_path + date_obs + pth.sep + label + pth.sep + '*_N' + string(nod_uniq[i_nod], format = '(I03)') + '*' + string(min_fid[idx_cfg], format = '(I06)') + '-' + $
           string(max_fid[idx_cfg], format = '(I06)') + '_IMG.fits', count = n0)
