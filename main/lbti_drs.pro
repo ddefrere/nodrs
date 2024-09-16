@@ -838,7 +838,7 @@ pro LBTI_DRS, date, cfg_file, $ ; Mandatory inputs (date and config file)
           endif
 
           ; Print some stuff
-          PRINT, 'Now computing flux of file :' + file_nod
+          ; if info gt 0 then print, '  - now computing flux of file :' + file_nod
 
           ; Read image
           img_data = LBTI_READL0RED(file_nod, hdr_data = hdr_data, info = info)
