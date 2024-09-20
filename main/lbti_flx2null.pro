@@ -428,6 +428,7 @@ FOR i_f = 0, n_files-1 DO BEGIN
       idx_nod_bckg = WHERE(nod_bckg EQ nod_bckg_uniq[ib])
       AVGSDV, bck_tot_phot[idx_nod_bckg], bck_avg, tmp, tmp2, KAPPA=5
       bck_tot_phot[idx_nod_bckg] = bck_tot_phot[idx_nod_bckg] - bck_avg   ; remove mean value for NSC fitting
+      data_bckg.flx_tot[id_aper] = bck_tot_phot
     ENDFOR
 
     ; Plot corrected background
