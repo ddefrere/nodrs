@@ -131,7 +131,7 @@ pro IMG2FLX, img_in, bck_method = bck_method, flx_method = flx_method, aper_rad 
       bck_orad[i_aper] = (bck_irad[i_aper] + 1) > bck_orad[i_aper]
       ; Do aperture photometry
       if not keyword_set(bck_cen) then begin
-        if keyword_set(sky_off) then skyval = [0,0.,1.] else skyval = !null ; A negligible value for the sky does the trick in aper_weight
+        if keyword_set(sky_off) then skyval = [0.,0.,1.] else skyval = !null ; A negligible value for the sky does the trick in aper_weight
         ; Because the pixels are correlated per column (at least for NOMIC), don't use APER anymore but define the background region as the pixels directly above and below the the star.
         ; APER, img_in, xcen, ycen, flx_tot0, flx_err0, bck_flx0, bck_err0, phpadu, [aper_rad[i_aper]], [bck_irad,bck_orad], good_range, /FLUX, /SILENT, /EXACT, /MEANBACK
         aper_weight, img_in, xcen, ycen, flx_tot0, flx_err0, bck_flx0, bck_err0, phpadu, [aper_rad[i_aper]], [bck_irad[i_aper], bck_orad[i_aper]], good_range, clipsig = 5, skylim = sky_lim, $
