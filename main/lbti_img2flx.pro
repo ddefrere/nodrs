@@ -354,7 +354,7 @@ pro LBTI_IMG2FLX, img_in, hdr_in, log_file = log_file, info = info, no_save = no
               j_chan2 = floor(ycen[i_beam] / n_ychan)
               bck_flx2[i_img, i_beam, *] += data_in[i_img].bck_avg[n_chan * i_chan2 + j_chan2]
             endif
-          endif else bck_flx[i_img, i_beam, *] += data_in[i_img].bck_avg ; backward compatibility
+          endif ; else bck_flx[i_img, i_beam, *] += data_in[i_img].bck_avg ; backward compatibility
         endif
         ; Enable file saving below
         save_on = 1
