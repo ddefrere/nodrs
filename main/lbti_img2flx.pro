@@ -312,7 +312,7 @@ pro LBTI_IMG2FLX, img_in, hdr_in, log_file = log_file, info = info, no_save = no
           ; IF hdr_in[i_img].obstype EQ 2 THEN star_pos = [35,75] ELSE star_pos = 0
           good_range = [-16000., 16000.] * mean(hdr_in.header.n_coadd) ; define good range for pixel values (in ADU)
           IMG2FLX, img_tmp, bck_method = drs.bfl_mode, flx_method = drs.flx_mode, aper_rad = aper_rad, bck_irad = bck_irad, bck_orad = bck_orad, bck_cen = bck_cen, good_range = good_range, psf_fwhm = psf_fwhm, phpadu = hdr_in.header.eperadu / cnf.qe, $
-            sky_col = drs.sky_col, sky_lim = sky_lim, sky_weight = drs.sky_weight, star_pos = star_pos[i_img, *, i_beam], nsky = n_sky, str_flx = s0, str_err = s0_err, bck_flx = b0, bck_err = b0_err ; Outputs keywords
+            sky_col = drs.sky_col, sky_lim = sky_lim, sky_off = drs.sky_off, sky_weight = drs.sky_weight, star_pos = star_pos[i_img, *, i_beam], nsky = n_sky, str_flx = s0, str_err = s0_err, bck_flx = b0, bck_err = b0_err ; Outputs keywords
           ; Parse results
           str_flx[i_img, i_beam, *] = s0
           str_err[i_img, i_beam, *] = s0_err
