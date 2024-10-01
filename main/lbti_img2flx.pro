@@ -348,13 +348,13 @@ pro LBTI_IMG2FLX, img_in, hdr_in, log_file = log_file, info = info, no_save = no
           if n_elements(data_in[i_img].bck_avg) gt 1 then begin
             i_chan = floor(xcen[i_beam] / n_xchan)
             j_chan = floor(ycen[i_beam] / n_ychan)
-            ; bck_flx[i_img, i_beam, *] += data_in[i_img].bck_avg[n_chan * i_chan + j_chan]
+            bck_flx[i_img, i_beam, *] += data_in[i_img].bck_avg[n_chan * i_chan + j_chan]
             if drs.bias_estim gt 0 and n_xpix gt 128 and hdr_in.header.obstype eq 2 then begin
               i_chan2 = floor(x_tmp / n_xchan)
               j_chan2 = floor(ycen[i_beam] / n_ychan)
               bck_flx2[i_img, i_beam, *] += data_in[i_img].bck_avg[n_chan * i_chan2 + j_chan2]
             endif
-          endif ; else bck_flx[i_img, i_beam, *] += data_in[i_img].bck_avg ; backward compatibility
+          endif else bck_flx[i_img, i_beam, *] += data_in[i_img].bck_avg ; backward compatibility
         endif
         ; Enable file saving below
         save_on = 1
