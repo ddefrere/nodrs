@@ -136,7 +136,7 @@ pro IMG2FLX, img_in, bck_method = bck_method, flx_method = flx_method, aper_rad 
         ; APER, img_in, xcen, ycen, flx_tot0, flx_err0, bck_flx0, bck_err0, phpadu, [aper_rad[i_aper]], [bck_irad,bck_orad], good_range, /FLUX, /SILENT, /EXACT, /MEANBACK
         aper_weight, img_in, xcen, ycen, flx_tot0, flx_err0, bck_flx0, bck_err0, phpadu, [aper_rad[i_aper]], [bck_irad[i_aper], bck_orad[i_aper]], good_range, clipsig = 5, skylim = sky_lim, $
           nsky = n_bck, sky_col = sky_col, sky_weight = sky_weight, weight = flx_method, fwhm = psf_fwhm, meanback = abs(bck_method - 1), setskyval = skyval, /flux, /silent, /exact ; (tests show that /MEANBACK gives the best results)
-        if keyword_set(sky_off) then print, 'SKY annulus is turned off. The returned values for the flux and background are  ' + string(flx_tot0, format = '(I0)') + ' - ' + string(bck_flx0, format = '(I0)') else print, 'SKY annulus is active. The returned values for the flux and background are  ' + string(flx_tot0, format = '(I0)') + ' - ' + string(bck_flx0, format = '(I0)')
+        ; if keyword_set(sky_off) then print, 'SKY annulus is turned off. The returned values for the flux and background are  ' + string(flx_tot0, format = '(I0)') + ' - ' + string(bck_flx0, format = '(I0)') else print, 'SKY annulus is active. The returned values for the flux and background are  ' + string(flx_tot0, format = '(I0)') + ' - ' + string(bck_flx0, format = '(I0)')
       endif else begin
         ; Compute the array where each value is its distance to xcen, ycen
         DIST_CIRCLE, dist_map, [n_xpix, n_ypix], xcen, ycen, /double
