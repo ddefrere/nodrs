@@ -1,6 +1,6 @@
 ;+
 ; NAME: PLOTALL
-; 
+;
 ; PURPOSE:
 ;   General plotting routine. Plot time series, histogram, FFT, and PSD
 ;
@@ -37,214 +37,211 @@
 ;   Version 2.0, 27-MAY-2016, DD: added keyword NO_HISTO
 ;   Version 2.1, 28-JUL-2016, DD: properly avoid negative values in plot if /XLOG or /YLOG
 ;   Version 2.2, 07-DEC-2016, DD: added CALL to MODSDV when /KERNEL is set
+;   Version 2.3, 20-NOC-2024, DD: prevented error with GAUSFFIT
 
-PRO PLOTALL, time, data, error, BOLD=bold, KERNEL=kernel, NAME=name, NO_FFT=no_fft, NO_HISTO=no_histo, TAG=tag, SCATTER=scatter, TITLE=title, $
-             XLOG=xlog, YLOG=ylog, XRANGE=xrange, YRANGE=yrange, XTITLE=xtitle, YTITLE=ytitle, EPS=eps
+pro PLOTALL, time, data, error, bold = bold, kernel = kernel, name = name, no_fft = no_fft, no_histo = no_histo, tag = tag, scatter = scatter, title = title, $
+  xlog = xlog, ylog = ylog, xrange = xrange, yrange = yrange, xtitle = xtitle, ytitle = ytitle, eps = eps
+  compile_opt idl2
 
- ; Turn off informational messages
- quiet0 = !quiet
- !quiet = 1
-           
-; Number of elements
-n_time = N_ELEMENTS(time)
-n_data = N_ELEMENTS(data)
-n_err  = N_ELEMENTS(error)
-             
-; Input and keyword sanity checks
-IF n_data NE n_time         THEN MESSAGE, 'Inputs should have the same size'
-IF NOT KEYWORD_SET(TAG)     THEN tag_plot  = ''      ELSE tag_plot  = '_' + tag
-IF NOT KEYWORD_SET(NAME)    THEN plot_file = 'image' ELSE plot_file = name + tag_plot
-IF NOT KEYWORD_SET(XTITLE)  THEN xtitle    = 'x' 
-IF NOT KEYWORD_SET(YTITLE)  THEN ytitle    = 'y' 
-IF NOT KEYWORD_SET(SCATTER) THEN symbol    = 0 ELSE symbol = 2 ; 2 is a '+' sign
+  ; Turn off informational messages
+  quiet0 = !quiet
+  !quiet = 1
 
-; Running parameters
-time_exp = 0.1   ; factor by which the time range will be expanded
-data_exp = 0.05  ; factor by which the data range will be expanded
+  ; Number of elements
+  n_time = n_elements(time)
+  n_data = n_elements(data)
+  n_err = n_elements(error)
 
-; Prepare input data for later
-;time0 = time-MIN(time)
-data0 = data-MEAN(data)
+  ; Input and keyword sanity checks
+  if n_data ne n_time then message, 'Inputs should have the same size'
+  if not keyword_set(tag) then tag_plot = '' else tag_plot = '_' + tag
+  if not keyword_set(name) then plot_file = 'image' else plot_file = name + tag_plot
+  if not keyword_set(xtitle) then xtitle = 'x'
+  if not keyword_set(ytitle) then ytitle = 'y'
+  if not keyword_set(scatter) then symbol = 0 else symbol = 2 ; 2 is a '+' sign
 
-; prepare time range
-time_max = MAX(time)
-time_min = MIN(time)
-time_min -= 0.5*time_exp*(time_max-time_min)
-time_max += 0.5*time_exp*(time_max-time_min)
+  ; Running parameters
+  time_exp = 0.1 ; factor by which the time range will be expanded
+  data_exp = 0.05 ; factor by which the data range will be expanded
 
-; Prepare data range
-data_max = MAX(data)
-data_min = MIN(data)
-data_min -= 0.5*data_exp*(data_max-data_min)
-data_max += 0.5*data_exp*(data_max-data_min)
+  ; Prepare input data for later
+  ; time0 = time-MIN(time)
+  data0 = data - mean(data)
 
-; Remove negative values if /XLOG or /YLOG are set
-IF KEYWORD_SET(XLOG) THEN time_min = time_min > 0.5*MIN(time[WHERE(time GT 0)])
-IF KEYWORD_SET(YLOG) THEN data_min = data_min > 0.5*MIN(data[WHERE(data GT 0)])
+  ; prepare time range
+  time_max = max(time)
+  time_min = min(time)
+  time_min -= 0.5 * time_exp * (time_max - time_min)
+  time_max += 0.5 * time_exp * (time_max - time_min)
 
+  ; Prepare data range
+  data_max = max(data)
+  data_min = min(data)
+  data_min -= 0.5 * data_exp * (data_max - data_min)
+  data_max += 0.5 * data_exp * (data_max - data_min)
 
-; 1. Compute histograms
-; *********************
+  ; Remove negative values if /XLOG or /YLOG are set
+  if keyword_set(xlog) then time_min = time_min > 0.5 * min(time[where(time gt 0)])
+  if keyword_set(ylog) then data_min = data_min > 0.5 * min(data[where(data gt 0)])
 
-IF NOT KEYWORD_SET(NO_HISTO) THEN BEGIN
-  ; Compute histogram
-  n_bin      = ROUND(SQRT(N_ELEMENTS(data)))
-  data_hist  = HISTOGRAM(data, NBINS=n_bin, LOCATIONS=bins)
-  bins       = bins + 0.5*(bins[1]-bins[0]) ; Shift to bin center
-  
-  ; Fit histogram
-  IF KEYWORD_SET(KERNEL) THEN BEGIN
-    ; Sanity check
-    IF n_data NE n_err THEN wei = 0 ELSE wei = 1./error^2 
-    ; Error bar computation
-    MODSDV, data, dat_mod, err_low, err_sup
-    ; Compute kernel density
-    n_rho      = 1D2*n_bin
-    binsize    = (data_max-data_min)/n_rho
-    rho_bin    = data_min + binsize*(DINDGEN(n_rho) + 0.5)
-    rho_data   = KDE(data, rho_bin, WEIGHT=wei,/GAUSSIAN)
-    rho_data   = rho_data/(TOTAL(rho_data)*binsize)*(TOTAL(data_hist)*(bins[1]-bins[0]))  ; normalize density
-  ENDIF ELSE gauss_fit = GAUSSFIT(bins,data_hist,fit_param,NTERMS=3,SIGMA=sigma)  ; Gaussian fit
-END
+  ; 1. Compute histograms
+  ; *********************
 
-; 2. Compute FFT and PSD
-; **********************
+  if not keyword_set(no_histo) then begin
+    ; Compute histogram
+    n_bin = round(sqrt(n_elements(data)))
+    data_hist = histogram(data, nbins = n_bin, locations = bins)
+    bins = bins + 0.5 * (bins[1] - bins[0]) ; Shift to bin center
+    n_terms = min(n_bin, 3)
 
-IF NOT KEYWORD_SET(NO_FFT) THEN COMPUTE_PSD, time, data, FREQ=freq, FRQ_EXT=frq_ext, FFT=fft, PSD=flx_psd, CUM_RMS=cum_rms, SLOPE=coeff, INFO=info, /REGRID
+    ; Fit histogram
+    if keyword_set(kernel) then begin
+      ; Sanity check
+      if n_data ne n_err then wei = 0 else wei = 1. / error ^ 2
+      ; Error bar computation
+      MODSDV, data, dat_mod, err_low, err_sup
+      ; Compute kernel density
+      n_rho = 1d2 * n_bin
+      binsize = (data_max - data_min) / n_rho
+      rho_bin = data_min + binsize * (dindgen(n_rho) + 0.5)
+      rho_data = kde(data, rho_bin, weight = wei, /gaussian)
+      rho_data = rho_data / (total(rho_data) * binsize) * (total(data_hist) * (bins[1] - bins[0])) ; normalize density
+    endif else gauss_fit = gaussfit(bins, data_hist, fit_param, nterms = n_terms, sigma = sigma) ; Gaussian fit
+  end
 
+  ; 2. Compute FFT and PSD
+  ; **********************
 
-; 3. Plot figures
-; ***************
+  if not keyword_set(no_fft) then COMPUTE_PSD, time, data, freq = freq, frq_ext = frq_ext, fft = fft, psd = flx_psd, cum_rms = cum_rms, slope = coeff, info = info, /regrid
 
-; Initiate plot parameters
-IF KEYWORD_SET(EPS) THEN fit = 20./1720. ELSE fit = 1
-inv     = 0
-!P.FONT = 0 
-IF KEYWORD_SET(BOLD) THEN BEGIN
-  thick  = 5.0
-  xthick = 5.0
-  ythick = xthick
-  cthick = 3.5
-  csize  = 1.3  
-ENDIF ELSE BEGIN
-  thick  = 4.0
-  xthick = 3.5
-  ythick = xthick
-  cthick = 3
-ENDELSE
+  ; 3. Plot figures
+  ; ***************
 
-; -- 3.1. Plot time series --
-; ---------------------------
+  ; Initiate plot parameters
+  if keyword_set(eps) then fit = 20. / 1720. else fit = 1
+  inv = 0
+  !p.font = 0
+  if keyword_set(bold) then begin
+    thick = 5.0
+    xthick = 5.0
+    ythick = xthick
+    cthick = 3.5
+    csize = 1.3
+  endif else begin
+    thick = 4.0
+    xthick = 3.5
+    ythick = xthick
+    cthick = 3
+  endelse
 
-IF NOT KEYWORD_SET(XRANGE) THEN x_range = [time_min,time_max] ELSE x_range = xrange
-IF NOT KEYWORD_SET(YRANGE) THEN y_range = [data_min,data_max] ELSE y_range = yrange
-IF KEYWORD_SET(YLOG) THEN y_range[0] = y_range[0] > 0.001*(data_max-data_min) 
-IF KEYWORD_SET(EPS) THEN PLOTXY, /INIT, INV=inv, /COLOR, /EPS, WINDOW=[0, 0, 1200, 800]*fit, FILENAME = plot_file + '_DATA.eps' $
-                    ELSE PLOTXY, /INIT, INV=inv, /COLOR, WINDOW=[0, 0, 1200, 800]*fit                 
-LOADCT, 0, /SILENT
-PLOTXY, time, data, YLOG=ylog, /NEW, XRANGE=x_range, YRANGE=y_range, TITLE=title, XTITLE=xtitle, YTITLE=ytitle, GRID=0, $
-        XSTYLE=1, YSTYLE=1, XTHICK=xthick, YTHICK=ythick, THICK=thick, CHARTHICK=cthick, /NODATA, /NOERASE, WINDOW=[150,100,1150,700]*fit;, INSET_UR='a.'
-LOADCT, 13, /SILENT
-PLOTXY, time, data, /ADD, SYMBOL=symbol, COLOR=255, THICK=thick 
-LOADCT, 0, /SILENT
-PLOTXY, /FIN
+  ; -- 3.1. Plot time series --
+  ; ---------------------------
 
-; -- 3.2. Plot histograms --
-; --------------------------
+  if not keyword_set(xrange) then x_range = [time_min, time_max] else x_range = xrange
+  if not keyword_set(yrange) then y_range = [data_min, data_max] else y_range = yrange
+  if keyword_set(ylog) then y_range[0] = y_range[0] > 0.001 * (data_max - data_min)
+  if keyword_set(eps) then PlotXY, /init, inv = inv, /color, /eps, window = [0, 0, 1200, 800] * fit, filename = plot_file + '_DATA.eps' $
+  else PlotXY, /init, inv = inv, /color, window = [0, 0, 1200, 800] * fit
+  loadct, 0, /silent
+  PlotXY, time, data, ylog = ylog, /new, xrange = x_range, yrange = y_range, title = title, xtitle = xtitle, ytitle = ytitle, grid = 0, $
+    xstyle = 1, ystyle = 1, xthick = xthick, ythick = ythick, thick = thick, charthick = cthick, /nodata, /noerase, window = [150, 100, 1150, 700] * fit ; , INSET_UR='a.'
+  loadct, 13, /silent
+  PlotXY, time, data, /add, symbol = symbol, color = 255, thick = thick
+  loadct, 0, /silent
+  PlotXY, /fin
 
-IF NOT KEYWORD_SET(NO_HISTO) THEN BEGIN
-  xrange = [data_min,data_max];[-5,100]
-  IF KEYWORD_SET(KERNEL) THEN yrange = [0.,MAX(rho_data)*1.2] ELSE yrange = [0.,MAX(gauss_fit)*1.2] 
-  IF KEYWORD_SET(EPS) THEN PLOTXY, /INIT, INV=inv, /COLOR, /EPS, WINDOW=[0, 0, 1200, 800]*fit, FILENAME = plot_file + '_HIST.eps' $
-                      ELSE PLOTXY, /INIT, INV=inv, /COLOR, WINDOW=[0, 0, 1200, 800]*fit
-  PLOTXY, bins, data_hist, PSYM=10, /NEW, XRANGE=xrange, YRANGE=yrange, TITLE=title, XTITLE=ytitle, YTITLE= 'Number of occurence', GRID=0, $
-          XSTYLE=1, YSTYLE=1, XTHICK=xthick, YTHICK=ythick, THICK=thick, CHARTHICK=cthick, /NODATA, /NOERASE, WINDOW=[150,100,1150,700]*fit;, INSET_UR='a.'
-  LOADCT, 13, /SILENT
-  PLOTXY, bins, data_hist, /ADD, PSYM=10, COLOR=90, THICK=thick
-  IF NOT KEYWORD_SET(KERNEL) THEN BEGIN 
-    PLOTXY, bins, gauss_fit, /ADD, COLOR=255, THICK=thick
-    XYOUTS, xrange[0]+0.1*(xrange[1]-xrange[0]), yrange[1]-0.1*(yrange[1]-yrange[0]), 'AVG: ' + STRING(fit_param[1], FORMAT='(F8.2)'), CHARSIZE=1.0, CHARTHICK=2.5
-    XYOUTS, xrange[0]+0.1*(xrange[1]-xrange[0]), yrange[1]-0.2*(yrange[1]-yrange[0]), 'RMS: ' + STRING(fit_param[2], FORMAT='(F8.2)'), CHARSIZE=1.0, CHARTHICK=2.5
-  ENDIF ELSE BEGIN
-    ;PLOTXY, rho_bin, rho_data, /ADD, COLOR=255, THICK=thick
-    XYOUTS, xrange[0]+0.1*(xrange[1]-xrange[0]), yrange[1]-0.1*(yrange[1]-yrange[0]), 'MODE   : ' + STRING(dat_mod, FORMAT='(F8.2)'), CHARSIZE=1.0, CHARTHICK=2.5
-    XYOUTS, xrange[0]+0.1*(xrange[1]-xrange[0]), yrange[1]-0.2*(yrange[1]-yrange[0]), 'ERR_LOW: ' + STRING(err_low, FORMAT='(F8.2)'), CHARSIZE=1.0, CHARTHICK=2.5
-    XYOUTS, xrange[0]+0.1*(xrange[1]-xrange[0]), yrange[1]-0.3*(yrange[1]-yrange[0]), 'ERR_SUP: ' + STRING(err_sup, FORMAT='(F8.2)'), CHARSIZE=1.0, CHARTHICK=2.5
-  ENDELSE
-  LOADCT, 0, /SILENT
-  PLOTXY, /FIN
-ENDIF
+  ; -- 3.2. Plot histograms --
+  ; --------------------------
 
-; -- 3.2. Plot FFT amplitude, FFT phase, and PSD --
-; -------------------------------------------------
-IF NOT KEYWORD_SET(NO_FFT) THEN BEGIN
-  ; Remove 0 frequency
-  IF freq[0] EQ 0 THEN BEGIN
-    freq    = freq[1:*]
-    fft     = fft[1:*]
-    flx_psd = flx_psd[1:*]
-  ENDIF
+  if not keyword_set(no_histo) then begin
+    xrange = [data_min, data_max] ; [-5,100]
+    if keyword_set(kernel) then yrange = [0., max(rho_data) * 1.2] else yrange = [0., max(gauss_fit) * 1.2]
+    if keyword_set(eps) then PlotXY, /init, inv = inv, /color, /eps, window = [0, 0, 1200, 800] * fit, filename = plot_file + '_HIST.eps' $
+    else PlotXY, /init, inv = inv, /color, window = [0, 0, 1200, 800] * fit
+    PlotXY, bins, data_hist, psym = 10, /new, xrange = xrange, yrange = yrange, title = title, xtitle = ytitle, ytitle = 'Number of occurence', grid = 0, $
+      xstyle = 1, ystyle = 1, xthick = xthick, ythick = ythick, thick = thick, charthick = cthick, /nodata, /noerase, window = [150, 100, 1150, 700] * fit ; , INSET_UR='a.'
+    loadct, 13, /silent
+    PlotXY, bins, data_hist, /add, psym = 10, color = 90, thick = thick
+    if not keyword_set(kernel) then begin
+      PlotXY, bins, gauss_fit, /add, color = 255, thick = thick
+      xyouts, xrange[0] + 0.1 * (xrange[1] - xrange[0]), yrange[1] - 0.1 * (yrange[1] - yrange[0]), 'AVG: ' + string(fit_param[1], format = '(F8.2)'), charsize = 1.0, charthick = 2.5
+      xyouts, xrange[0] + 0.1 * (xrange[1] - xrange[0]), yrange[1] - 0.2 * (yrange[1] - yrange[0]), 'RMS: ' + string(fit_param[2], format = '(F8.2)'), charsize = 1.0, charthick = 2.5
+    endif else begin
+      ; PLOTXY, rho_bin, rho_data, /ADD, COLOR=255, THICK=thick
+      xyouts, xrange[0] + 0.1 * (xrange[1] - xrange[0]), yrange[1] - 0.1 * (yrange[1] - yrange[0]), 'MODE   : ' + string(dat_mod, format = '(F8.2)'), charsize = 1.0, charthick = 2.5
+      xyouts, xrange[0] + 0.1 * (xrange[1] - xrange[0]), yrange[1] - 0.2 * (yrange[1] - yrange[0]), 'ERR_LOW: ' + string(err_low, format = '(F8.2)'), charsize = 1.0, charthick = 2.5
+      xyouts, xrange[0] + 0.1 * (xrange[1] - xrange[0]), yrange[1] - 0.3 * (yrange[1] - yrange[0]), 'ERR_SUP: ' + string(err_sup, format = '(F8.2)'), charsize = 1.0, charthick = 2.5
+    endelse
+    loadct, 0, /silent
+    PlotXY, /fin
+  endif
 
-  ; Compute FFT amplitude
-  fft_amp = ABS(fft)
-  yrange = [0.5*MIN(fft_amp), 1.5*MAX(fft_amp[1:*])]
-  xrange = [MIN(freq),MAX(freq)]
-  IF KEYWORD_SET(EPS) THEN PLOTXY, /INIT, INV=inv, /COLOR, /EPS, WINDOW=[0, 0, 1200, 800]*fit, FILENAME = plot_file + '_FFT_AMP.eps' $
-                      ELSE PLOTXY, /INIT, INV=inv, /COLOR, WINDOW=[0, 0, 1200, 800]*fit
-  PLOTXY, freq, fft_amp, /XLOG, /NEW, XRANGE=xrange, YRANGE=yrange, TITLE=title, XTITLE='Frequency [Hz]', YTITLE='FFT amplitude', GRID=0, $
-          XSTYLE=1, YSTYLE=1, XTHICK=xthick, YTHICK=ythick, THICK=thick, CHARTHICK=cthick, /NODATA, /NOERASE, WINDOW=[150,100,1150,700]*fit;, INSET_UR='a.'
-  LOADCT, 13, /SILENT
-  PLOTXY, freq, fft_amp, /ADD, LINESTYLE=0, COLOR=255, THICK=thick
-  LOADCT, 0, /SILENT
-  PLOTXY, /FIN  
-  
-  ; Compute FFT phase
-  fft_pha = ATAN(Imaginary(fft),Real_part(fft))
-  yrange = [1.5*MIN(fft_pha), 1.5*MAX(fft_pha[1:*])]
-  xrange = [MIN(freq[1:*]),MAX(freq)]
-  IF KEYWORD_SET(EPS) THEN PLOTXY, /INIT, INV=inv, /COLOR, /EPS, WINDOW=[0, 0, 1200, 800]*fit, FILENAME = plot_file + '_FFT_PHA.eps' $
-                      ELSE PLOTXY, /INIT, INV=inv, /COLOR, WINDOW=[0, 0, 1200, 800]*fit
-  PLOTXY, freq, fft_pha, /XLOG, /NEW, XRANGE=xrange, YRANGE=yrange, TITLE=title, XTITLE='Frequency [Hz]', YTITLE='FFT phase [rad]', GRID=0, $
-    XSTYLE=1, YSTYLE=1, XTHICK=xthick, YTHICK=ythick, THICK=thick, CHARTHICK=cthick, /NODATA, /NOERASE, WINDOW=[150,100,1150,700]*fit;, INSET_UR='a.'
-  LOADCT, 13, /SILENT
-  PLOTXY, freq, fft_pha, /ADD, LINESTYLE=0, COLOR=255, THICK=thick
-  LOADCT, 0, /SILENT
-  PLOTXY, /FIN
-  
-  ; Compute PSD
-  yrange = [0.5*MIN(flx_psd) > 1D-6*MAX(flx_psd[1:*]), 1.5*MAX(flx_psd[1:*])]
-  xrange = [MIN(freq[1:*]), MAX(freq)]
-  IF KEYWORD_SET(EPS) THEN PLOTXY, /INIT, INV=inv, /COLOR, /EPS, WINDOW=[0, 0, 1200, 800]*fit, FILENAME = plot_file + '_PSD.eps' $
-                      ELSE PLOTXY, /INIT, INV=inv, /COLOR, WINDOW=[0, 0, 1200, 800]*fit
-  PLOTXY, freq, flx_psd, /XLOG, /YLOG, /NEW, XRANGE=xrange, YRANGE=yrange, TITLE=title, XTITLE='Frequency [Hz]', YTITLE='PSD', GRID=0, $
-    XSTYLE=1, YSTYLE=1, XTHICK=xthick, YTHICK=ythick, THICK=thick, CHARTHICK=cthick, /NODATA, /NOERASE, WINDOW=[150,100,1150,700]*fit;, INSET_UR='a.'
-  LOADCT, 13, /SILENT
-  PLOTXY, freq, flx_psd, /ADD, LINESTYLE=0, COLOR=255, THICK=thick
-  LOADCT, 0, /SILENT
-  PLOTXY, /FIN
-ENDIF
+  ; -- 3.2. Plot FFT amplitude, FFT phase, and PSD --
+  ; -------------------------------------------------
+  if not keyword_set(no_fft) then begin
+    ; Remove 0 frequency
+    if freq[0] eq 0 then begin
+      freq = freq[1 : *]
+      fft = fft[1 : *]
+      flx_psd = flx_psd[1 : *]
+    endif
 
-; -- 3.3. data versus error --
-; ----------------------------
+    ; Compute FFT amplitude
+    fft_amp = abs(fft)
+    yrange = [0.5 * min(fft_amp), 1.5 * max(fft_amp[1 : *])]
+    xrange = [min(freq), max(freq)]
+    if keyword_set(eps) then PlotXY, /init, inv = inv, /color, /eps, window = [0, 0, 1200, 800] * fit, filename = plot_file + '_FFT_AMP.eps' $
+    else PlotXY, /init, inv = inv, /color, window = [0, 0, 1200, 800] * fit
+    PlotXY, freq, fft_amp, /xlog, /new, xrange = xrange, yrange = yrange, title = title, xtitle = 'Frequency [Hz]', ytitle = 'FFT amplitude', grid = 0, $
+      xstyle = 1, ystyle = 1, xthick = xthick, ythick = ythick, thick = thick, charthick = cthick, /nodata, /noerase, window = [150, 100, 1150, 700] * fit ; , INSET_UR='a.'
+    loadct, 13, /silent
+    PlotXY, freq, fft_amp, /add, linestyle = 0, color = 255, thick = thick
+    loadct, 0, /silent
+    PlotXY, /fin
 
-IF n_data EQ n_err AND MAX(data) NE 0 AND MAX(error) GT 0 THEN BEGIN
-  xrange = [0.1, 2.*MAX(data)]
-  yrange = [0.2*MIN(error[WHERE(error GT 0)]), 2.*MAX(error)]
-  IF KEYWORD_SET(EPS) THEN PLOTXY, /INIT, INV=inv, /COLOR, /EPS, WINDOW=[0, 0, 1200, 800]*fit, FILENAME = plot_file + '_SEN.eps' $
-                      ELSE PLOTXY, /INIT, INV=inv, /COLOR, WINDOW=[0, 0, 1200, 800]*fit
-  PLOTXY, data, error, XLOG=xlog, YLOG=ylog, /NEW, XRANGE=xrange, YRANGE=yrange,TITLE=title, XTITLE=ytitle, YTITLE='Error', GRID=0, $
-          XSTYLE=1, YSTYLE=1, /NODATA, /NOERASE, WINDOW=[150,100,1150,700]*fit;, INSET_UR='a.'
-  LOADCT, 13, /SILENT
-  PLOTXY, data, error, /ADD, PSYM=1, COLOR=90, THICK=thick
-  PLOTXY, [1D-4,1D+4], [1D-4,1D+4], /ADD, LINESTYLE=1, COLOR=0, THICK=thick
-  LOADCT, 0, /SILENT
-  PLOTXY, /FIN
-ENDIF
+    ; Compute FFT phase
+    fft_pha = atan(imaginary(fft), real_part(fft))
+    yrange = [1.5 * min(fft_pha), 1.5 * max(fft_pha[1 : *])]
+    xrange = [min(freq[1 : *]), max(freq)]
+    if keyword_set(eps) then PlotXY, /init, inv = inv, /color, /eps, window = [0, 0, 1200, 800] * fit, filename = plot_file + '_FFT_PHA.eps' $
+    else PlotXY, /init, inv = inv, /color, window = [0, 0, 1200, 800] * fit
+    PlotXY, freq, fft_pha, /xlog, /new, xrange = xrange, yrange = yrange, title = title, xtitle = 'Frequency [Hz]', ytitle = 'FFT phase [rad]', grid = 0, $
+      xstyle = 1, ystyle = 1, xthick = xthick, ythick = ythick, thick = thick, charthick = cthick, /nodata, /noerase, window = [150, 100, 1150, 700] * fit ; , INSET_UR='a.'
+    loadct, 13, /silent
+    PlotXY, freq, fft_pha, /add, linestyle = 0, color = 255, thick = thick
+    loadct, 0, /silent
+    PlotXY, /fin
 
-; Restore informational messages
-!quiet = quiet0
-END
+    ; Compute PSD
+    yrange = [0.5 * min(flx_psd) > 1d-6 * max(flx_psd[1 : *]), 1.5 * max(flx_psd[1 : *])]
+    xrange = [min(freq[1 : *]), max(freq)]
+    if keyword_set(eps) then PlotXY, /init, inv = inv, /color, /eps, window = [0, 0, 1200, 800] * fit, filename = plot_file + '_PSD.eps' $
+    else PlotXY, /init, inv = inv, /color, window = [0, 0, 1200, 800] * fit
+    PlotXY, freq, flx_psd, /xlog, /ylog, /new, xrange = xrange, yrange = yrange, title = title, xtitle = 'Frequency [Hz]', ytitle = 'PSD', grid = 0, $
+      xstyle = 1, ystyle = 1, xthick = xthick, ythick = ythick, thick = thick, charthick = cthick, /nodata, /noerase, window = [150, 100, 1150, 700] * fit ; , INSET_UR='a.'
+    loadct, 13, /silent
+    PlotXY, freq, flx_psd, /add, linestyle = 0, color = 255, thick = thick
+    loadct, 0, /silent
+    PlotXY, /fin
+  endif
 
+  ; -- 3.3. data versus error --
+  ; ----------------------------
 
+  if n_data eq n_err and max(data) ne 0 and max(error) gt 0 then begin
+    xrange = [0.1, 2. * max(data)]
+    yrange = [0.2 * min(error[where(error gt 0)]), 2. * max(error)]
+    if keyword_set(eps) then PlotXY, /init, inv = inv, /color, /eps, window = [0, 0, 1200, 800] * fit, filename = plot_file + '_SEN.eps' $
+    else PlotXY, /init, inv = inv, /color, window = [0, 0, 1200, 800] * fit
+    PlotXY, data, error, xlog = xlog, ylog = ylog, /new, xrange = xrange, yrange = yrange, title = title, xtitle = ytitle, ytitle = 'Error', grid = 0, $
+      xstyle = 1, ystyle = 1, /nodata, /noerase, window = [150, 100, 1150, 700] * fit ; , INSET_UR='a.'
+    loadct, 13, /silent
+    PlotXY, data, error, /add, psym = 1, color = 90, thick = thick
+    PlotXY, [1d-4, 1d+4], [1d-4, 1d+4], /add, linestyle = 1, color = 0, thick = thick
+    loadct, 0, /silent
+    PlotXY, /fin
+  endif
 
-
+  ; Restore informational messages
+  !quiet = quiet0
+end
