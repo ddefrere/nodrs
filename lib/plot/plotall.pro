@@ -92,7 +92,7 @@ pro PLOTALL, time, data, error, bold = bold, kernel = kernel, name = name, no_ff
     n_bin = round(sqrt(n_elements(data)))
     data_hist = histogram(data, nbins = n_bin, locations = bins)
     bins = bins + 0.5 * (bins[1] - bins[0]) ; Shift to bin center
-    n_terms = min(n_bin, 3)
+    n_terms = min([n_bin, 3])
 
     ; Fit histogram
     if keyword_set(kernel) then begin
