@@ -92,7 +92,6 @@ pro PLOTALL, time, data, error, bold = bold, kernel = kernel, name = name, no_ff
     n_bin = round(sqrt(n_elements(data)))
     data_hist = histogram(data, nbins = n_bin, locations = bins)
     bins = bins + 0.5 * (bins[1] - bins[0]) ; Shift to bin center
-    n_terms = min([n_bin, 3])
 
     ; Fit histogram
     if keyword_set(kernel) then begin
@@ -106,7 +105,7 @@ pro PLOTALL, time, data, error, bold = bold, kernel = kernel, name = name, no_ff
       rho_bin = data_min + binsize * (dindgen(n_rho) + 0.5)
       rho_data = kde(data, rho_bin, weight = wei, /gaussian)
       rho_data = rho_data / (total(rho_data) * binsize) * (total(data_hist) * (bins[1] - bins[0])) ; normalize density
-    endif else gauss_fit = gaussfit(bins, data_hist, fit_param, nterms = n_terms, sigma = sigma) ; Gaussian fit
+    endif else if n_bin ge 3 then gauss_fit = gaussfit(bins, data_hist, fit_param, nterms = 3, sigma = sigma) ; Gaussian fit
   end
 
   ; 2. Compute FFT and PSD
@@ -153,7 +152,7 @@ pro PLOTALL, time, data, error, bold = bold, kernel = kernel, name = name, no_ff
   ; -- 3.2. Plot histograms --
   ; --------------------------
 
-  if not keyword_set(no_histo) then begin
+  if not keyword_set(no_histo) and n_bin ge 3 then begin
     xrange = [data_min, data_max] ; [-5,100]
     if keyword_set(kernel) then yrange = [0., max(rho_data) * 1.2] else yrange = [0., max(gauss_fit) * 1.2]
     if keyword_set(eps) then PlotXY, /init, inv = inv, /color, /eps, window = [0, 0, 1200, 800] * fit, filename = plot_file + '_HIST.eps' $
