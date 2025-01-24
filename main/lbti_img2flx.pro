@@ -50,6 +50,7 @@
 ;   Version 3.5, 27-MAY-2024, DD: Now make sure bck_orad has the same size as bck_irad
 ;   Version 3.6, 27-AUG-2024, DD: Remove transition frames in the background data
 ;   Version 3.7, 02-SEP-2024, DD: Added option to disregard the sky annulus
+;   Version 3.8, 24-JAN-2025, DD: Corrected bug introduced in version 3.6 for cases where no star was found in nulling mode
 ;
 pro LBTI_IMG2FLX, img_in, hdr_in, log_file = log_file, info = info, no_save = no_save, plot = plot, ob_in = ob_in, xcen = xcen_in, ycen = ycen_in
   compile_opt idl2
@@ -144,12 +145,13 @@ pro LBTI_IMG2FLX, img_in, hdr_in, log_file = log_file, info = info, no_save = no
   if max(data_in[*].xcen_sx) ne 0 or max(data_in[*].ycen_sx) ne 0 then n_beam = n_beam + 1
   if max(data_in[*].xcen_dx) ne 0 or max(data_in[*].ycen_dx) ne 0 then n_beam = n_beam + 1
   if keyword_set(xcen_in) then n_auxil = n_elements(xcen_in) else n_auxil = 0
-  n_beam = n_beam + n_auxil
+  n_beam = n_beam + n_auxil ; Contain the position of the star in the next nod. We need this to compute the background flux at the same position here
   if n_beam eq 0 then begin
     message, 'No beam found for this nod. Skip', /continue
     RETURN
   endif
   idx = 0
+  if hdr_in.header.obstype eq 2 then n_beam = 2 ; ALways 2 beams in nulling mode
   ob_all = fltarr(n_beam)
   xcen_all = fltarr(n_img, n_beam)
   ycen_all = fltarr(n_img, n_beam)
