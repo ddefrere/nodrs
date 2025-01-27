@@ -77,6 +77,7 @@
 ;   Version 6.1,  03-MAY-2024, DD: Now saved processed L1 files
 ;   Version 6.2,  24-MAY-2024, DD: Update file permission
 ;   Version 6.2,  27-AUG-2024, DD: Moved up the computation of the mean background and save the corrected background as filtered file
+;   Version 6.3,  27-JAN-2025, DD: Corrected syntax of bckg_bias error term (used only for bckg_mode greater than 1)
 
 pro LBTI_FLX2NULL, date, ob_idx = ob_idx, info = info, log_file = log_file, no_multi = no_multi, no_save = no_save, plot = plot, renew = renew
   compile_opt idl2
@@ -962,6 +963,7 @@ pro LBTI_FLX2NULL, date, ob_idx = ob_idx, info = info, log_file = log_file, no_m
         else: message, 'Unknown NSC mode. Must be 0, 1, 2, or 3.'
       endcase
     endif else null_data = data[i_f].null_star.null_avg
+
     ; Now parse to null results
     err_nsc = null_data.nas_err_sup > null_data.nas_err_low ; Take MAX of error LOW and error SUP
     data[i_f].null_meas = null_data.nas
@@ -978,7 +980,8 @@ pro LBTI_FLX2NULL, date, ob_idx = ob_idx, info = info, log_file = log_file, no_m
     data[i_f].null_offset = data[i_f].null_meas - data[i_f].null_star.null_opt.nas
 
     ; Compute expected error terms
-    if data[i_f].bck_mode ge 0 then null_err_phot = sqrt(err_bckg ^ 2 + data[i_f].bckg_ebias ^ 2) else null_err_phot = sqrt(2) * err_bckg
+    if data[i_f].bck_mode ge 0 then null_err_phot = sqrt(err_bckg ^ 2 + data[i_f].bias_err ^ 2) else null_err_phot = sqrt(2) * err_bckg
+    print, bck_mode
     null_err_phase = sqrt(4 * (data[i_f].nsc_phavg) ^ 2 * (data[i_f].nsc_phrms) ^ 2 + 2 * (data[i_f].nsc_phrms) ^ 4) / 4
 
     ; Print onfo
