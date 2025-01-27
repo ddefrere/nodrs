@@ -141,17 +141,16 @@ pro LBTI_IMG2FLX, img_in, hdr_in, log_file = log_file, info = info, no_save = no
 
   ; Define array with beam positions for each image
   ; But first compute the total number of beam positions per image (specified in the file data + those defined as input)
-  n_beam = 0
-  if max(data_in[*].xcen_sx) ne 0 or max(data_in[*].ycen_sx) ne 0 then n_beam = n_beam + 1
-  if max(data_in[*].xcen_dx) ne 0 or max(data_in[*].ycen_dx) ne 0 then n_beam = n_beam + 1
-  if keyword_set(xcen_in) then n_auxil = n_elements(xcen_in) else n_auxil = 0
-  n_beam = n_beam + n_auxil ; Contain the position of the star in the next nod. We need this to compute the background flux at the same position here
-  if n_beam eq 0 then begin
+  n_star = 0
+  if max(data_in[*].xcen_sx) ne 0 or max(data_in[*].ycen_sx) ne 0 then n_star = n_star + 1
+  if max(data_in[*].xcen_dx) ne 0 or max(data_in[*].ycen_dx) ne 0 then n_star = n_star + 1
+  if keyword_set(xcen_in) then n_auxil = n_elements(xcen_in) else n_auxil = 0 ; Contain the position of the star in the next nod. We need this to compute the background flux at the same position here
+  if n_star eq 0 and n_auxil eq 0 then begin
     message, 'No beam found for this nod. Skip', /continue
     RETURN
   endif
-  idx = 0
-  if hdr_in.header.obstype eq 2 then n_beam = 2 ; ALways 2 beams in nulling mode
+  if hdr_in.header.obstype eq 2 and n_star eq 0 then n_star = 1 ; Make sure there is at least one beam in nulling mode. The auxiliary fluwx has to go in the second column (sometimes, there is no nulling beam but we need this nod for background)
+  n_beam = n_star + n_auxil
   ob_all = fltarr(n_beam)
   xcen_all = fltarr(n_img, n_beam)
   ycen_all = fltarr(n_img, n_beam)
@@ -159,18 +158,16 @@ pro LBTI_IMG2FLX, img_in, hdr_in, log_file = log_file, info = info, no_save = no
     ob_all[0] = data_in[0].ob_id
     xcen_all[*, 0] = data_in[*].xcen_sx
     ycen_all[*, 0] = data_in[*].ycen_sx
-    idx = 1
   endif
   if max(data_in[*].xcen_dx) ne 0 or max(data_in[*].ycen_dx) ne 0 then begin
     ; ob_all[1]     = data_in.data.ob_id  ; never used because photometric frames don't use ob_all
     xcen_all[*, 1] = data_in[*].xcen_dx
     ycen_all[*, 1] = data_in[*].ycen_dx
-    idx = 2
   endif
   for i = 0, n_auxil - 1 do begin
-    ob_all[i + idx] = ob_in[i]
-    xcen_all[*, i + idx] = xcen_in[i]
-    ycen_all[*, i + idx] = ycen_in[i]
+    ob_all[i + n_star] = ob_in[i]
+    xcen_all[*, i + n_star] = xcen_in[i]
+    ycen_all[*, i + n_star] = ycen_in[i]
   endfor
 
   ; If null beam, only do closed-loop frames for the NULL beam. For the background beam, skip the first 5 frames which are often transition frames (when the loop is open)
