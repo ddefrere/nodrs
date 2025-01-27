@@ -981,7 +981,7 @@ pro LBTI_FLX2NULL, date, ob_idx = ob_idx, info = info, log_file = log_file, no_m
 
     ; Compute expected error terms
     if data[i_f].bck_mode ge 0 then null_err_phot = sqrt(err_bckg ^ 2 + data[i_f].bias_err ^ 2) else null_err_phot = sqrt(2) * err_bckg
-    print, bck_mode
+    print, 'BCKG MODE : ' + data[i_f].bck_mode
     null_err_phase = sqrt(4 * (data[i_f].nsc_phavg) ^ 2 * (data[i_f].nsc_phrms) ^ 2 + 2 * (data[i_f].nsc_phrms) ^ 4) / 4
 
     ; Print onfo
