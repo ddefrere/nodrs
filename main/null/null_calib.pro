@@ -76,6 +76,7 @@
 ;   Version 6.0,  25-OCT-2023, DD: Updated UV coordinate file name
 ;   Version 6.1,  24-MAY-2024, DD: Update file permission
 ;   Version 6.2,  27-JAN-2025, DD: Corrected syntax of bckg_bias error term (used only for bckg_mode greater than 1)
+;   Version 6.3,  05-FEB-2025, DD: Added FILE_VERSION to output file
 
 pro NULL_CALIB, date, cfg_file, calpob = calpob, log_file = log_file, no_inset = no_inset, remove_id = remove_id, remove_ob = remove_ob, runbias = runbias, info = info, plot = plot, version = version
   compile_opt idl2
@@ -1316,6 +1317,7 @@ pro NULL_CALIB, date, cfg_file, calpob = calpob, log_file = log_file, no_inset =
     FXADDPAR, hdr, 'DRS_DATE', FXPAR(header, 'DRS_DATE'), 'DRS version date'
     FXADDPAR, hdr, 'DATE_RED', FXPAR(header, 'DATE_RED'), 'Date of data reduction'
     FXADDPAR, hdr, 'DATE_CAL', systime(), 'Date of data calibration'
+    FXADDPAR, hdr, 'FILE_VER', file_ver, 'L1 file version number'
     FXADDPAR, hdr, 'COMMENT', 'Image calibration parameters', after = 'DATE_CAL'
     FXADDPAR, hdr, 'BCK_MODE', FXPAR(header, 'BCK_MODE'), '0=nod pairs, 1=0, 2=adjacent nods, 3=closest frames''
     FXADDPAR, hdr, 'N_BIN', FXPAR(header, 'N_BIN'), 'Image re-binning size'
