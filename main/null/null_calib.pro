@@ -76,7 +76,7 @@
 ;   Version 6.0,  25-OCT-2023, DD: Updated UV coordinate file name
 ;   Version 6.1,  24-MAY-2024, DD: Update file permission
 ;   Version 6.2,  27-JAN-2025, DD: Corrected syntax of bckg_bias error term (used only for bckg_mode greater than 1)
-;   Version 6.3,  05-FEB-2025, DD: Added FILE_VERSION to output file
+;   Version 6.3,  05-FEB-2025, DD: Added FILE_VERSION to output file and fixed tthe issue with the quality flag (now short integer)
 
 pro NULL_CALIB, date, cfg_file, calpob = calpob, log_file = log_file, no_inset = no_inset, remove_id = remove_id, remove_ob = remove_ob, runbias = runbias, info = info, plot = plot, version = version
   compile_opt idl2
@@ -1144,7 +1144,7 @@ pro NULL_CALIB, date, cfg_file, calpob = calpob, log_file = log_file, no_inset =
     sci_seeing = float(seeing[idx_sci[idx_ok]])
     sci_smttau = float(smttau[idx_sci[idx_ok]])
     sci_fpcp = float(fpcp[idx_sci[idx_ok]])
-    qua_flag = 2 + intarr(n_scidat) ; Quality flag (manual for now)
+    qua_flag = fix(2 + intarr(n_scidat)) ; Quality flag (manual for now)
     null_meas = double(null[idx_sci[idx_ok]])
     null_meas_err = double(null_err[idx_sci[idx_ok]])
     null_flo = double(tf_sci[idx_ok])
@@ -1180,7 +1180,7 @@ pro NULL_CALIB, date, cfg_file, calpob = calpob, log_file = log_file, no_inset =
     sci_smttau = fltarr(n_scidat_pt, n_nod)
     sci_ucoord = fltarr(n_scidat_pt, n_nod)
     sci_vcoord = fltarr(n_scidat_pt, n_nod)
-    qua_flag = 2 + intarr(n_scidat_pt)
+    qua_flag = fix(2 + intarr(n_scidat_pt))
     for i_nod = 0, n_nod - 1 do begin
       for i_pt = 0, n_scidat_pt - 1 do begin
         idx_pt = where(pt_id eq pt_uniq[idx_sci_pt[i_pt]] and nod_pos eq nod_uniq[i_nod], n_inpt)
