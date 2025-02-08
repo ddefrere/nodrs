@@ -16,19 +16,19 @@
 ;   FLAT_IDX      :  Two-element vector with the lower and the upper file numbers of the flat files (e.g., [10,19])
 ;   NOD_IDX       :  2x(number of nods) array with the lower and the upper file numbers of each nod position (e.g., [[120,239],[240,299],[300,399]])
 ;   OB_IDX        :  Two-element vector with the lower and upper OB ID numbers to process during the null computation
-;   DATA_PATH     :  String vector pointing to the the path of scientific data (superseed date)
-;   BCKG_PATH     :  String vector pointing to the the path of background data (superseed bckg_idx keyword)
-;   DARK_PATH     :  String vector pointing to the the path of dark data (superseed dark_idx keyword)
-;   FLAT_PATH     :  String vector pointing to the the path of flat data (superseed flat_idx keyword)
+;   DATA_PATH     :  String vector pointing to the the path of scientific data (supersede date)
+;   BCKG_PATH     :  String vector pointing to the the path of background data (supersede bckg_idx keyword)
+;   DARK_PATH     :  String vector pointing to the the path of dark data (supersede dark_idx keyword)
+;   FLAT_PATH     :  String vector pointing to the the path of flat data (supersede flat_idx keyword)
 ;
 ; RUNNING INPUT KEYWORDS
 ;   MASTERLOG     :  Set this keyword to force the creation of new masterlog file
 ;   RENEW         :  Set this keyword to force the code to create a new file (e.g., darks, flats, l0_fits, l1_fits, ...).
 ;                 :  Otherwise, the code doesn't process the data if the appropriate intermediate file already exists (with the same reduction parameters)
-;   SKIP_ADI      :  Set to skip ADI processing (superseed the value in the cnfig file)
-;   SKIP_FLX      :  Set to skip flux computation (files restored from disk, superseed the value in the config file)
-;   SKIP_NULL     :  Set to skip null computation (superseed the value in the cnfig file)
-;   SKIP_RED      :  Set to skip image reduction (files restored from disk, superseed the value in the config file)
+;   SKIP_ADI      :  Set to skip ADI processing (supersede the value in the config file)
+;   SKIP_FLX      :  Set to skip flux computation (files restored from disk, supersede the value in the config file)
+;   SKIP_NULL     :  Set to skip null computation (supersede the value in the config file)
+;   SKIP_RED      :  Set to skip image reduction (files restored from disk, supersede the value in the config file)
 ;   LOG_FILE      :  Set this keyword to save the results in an external log file
 ;   NO_MULTI      :  Set this keyword to turn off multi-threading
 ;   NO_SAVE       :  Set this keyword to turn off data saving
@@ -69,8 +69,8 @@
 ;   Version 2.7, 13-JAN-2014, DD: Implemented masterlog file and incremental read of the L0 data files
 ;   Version 2.8, 14-JAN-2014, DD: Modified the use of the OBSTYPE keyword and implemented XCEN/YCEN as two-element vectors
 ;   Version 2.9, 15-JAN-2014, DD: Added keyword MASTERLOG to force the creation of a new masterlog file
-;   Version 3.0, 07-FEB-2014, DD: Removed obsolote filter keywords and improved speed of image calibration
-;   Version 3.1, 23-FEB-2014, DD: Splitted background subtraction and frame centering
+;   Version 3.0, 07-FEB-2014, DD: Removed obsolete filter keywords and improved speed of image calibration
+;   Version 3.1, 23-FEB-2014, DD: Split background subtraction and frame centering
 ;   Version 3.2, 13-MAR-2014, DD: Replaced NO_OVERLAP by OVERLAP
 ;   Version 3.3, 13-APR-2014, DD: Implemented incremental reduction for null computation
 ;   Version 3.4, 23-MAY-2014, DD: Added keyword BCKG_MODE and SKIP_FLX
@@ -86,7 +86,7 @@
 ;   Version 5.5, 22-OCT-2014, DD: Now save nods independently
 ;   Version 5.6, 28-OCT-2014, DD: Added keyword PSF_FILE
 ;   Version 5.7, 29-OCT-2014, DD: Added keyword BIAS_ESTIM
-;   Version 5.8, 01-NOV-2014, DD: Modfified call to LBTI_IMGBCK to use new background subtraction strategy
+;   Version 5.8, 01-NOV-2014, DD: Modified call to LBTI_IMGBCK to use new background subtraction strategy
 ;   Version 5.9, 05-NOV-2014, DD: Calibrated L0 data now saved in LBTI_IMGBCK + added log file for calibrated L0 files
 ;   Version 6.0, 11-NOV-2014, DD: Added PHASECam setpoint in the definition of instrumental configurations
 ;   Version 6.1, 17-NOV-2014, DD: Added keyword NULL_LIM
@@ -111,7 +111,7 @@
 ;   Version 8.0, 22-DEC-2015, DD: Included call to LBTI_READMASTERLOG + modified call to LBTI_READDATA + improved memory usage
 ;   Version 8.1, 26-MAR-2016, DD: Corrected bug with bad pixel map computation + added keyword RENEW + modified call to LBTI_READDATA
 ;   Version 8.2, 28-APR-2016, DD: Improved bad pixel map and flat computation
-;   Version 8.3, 26-MAY-2016, DD: Added diagnsotic plots
+;   Version 8.3, 26-MAY-2016, DD: Added diagnostic plots
 ;   Version 8.4, 03-JUL-2016, DD: Implemented use of central value for background selection
 ;   Version 8.5, 06-JUL-2016, DD: Now avoid reading multiple times the same files when doing the background subtraction
 ;   Version 8.6, 11-JUL-2016, DD: Now properly assign background OBs in all cases
@@ -128,8 +128,8 @@
 ;   Version 9.7, 16-SEP-2024, DD: Activated PCA-background frames for PCA too
 
 pro LBTI_DRS, date, cfg_file, $ ; Mandatory inputs (date and config file)
-  bad_idx = bad_idx, bckg_idx = bckg_idx, dark_idx = dark_idx, data_idx = data_idx, flat_idx = flat_idx, nod_idx = nod_idx, ob_idx = ob_idx, $ ; Optional inputs (file index, superseed keywords)
-  data_path = data_path, bckg_path = bckg_path, dark_path = dark_path, flat_path = flat_path, $ ; Optional inputs (file path, superseed "*_idx" keywords)
+  bad_idx = bad_idx, bckg_idx = bckg_idx, dark_idx = dark_idx, data_idx = data_idx, flat_idx = flat_idx, nod_idx = nod_idx, ob_idx = ob_idx, $ ; Optional inputs (file index, supersede keywords)
+  data_path = data_path, bckg_path = bckg_path, dark_path = dark_path, flat_path = flat_path, $ ; Optional inputs (file path, supersede "*_idx" keywords)
   masterlog = masterlog, renew = renew, skip_adi = skip_adi, skip_flx = skip_flx, skip_null = skip_null, skip_red = skip_red, $ ; Running keywords
   log_file = log_file, no_multi = no_multi, no_save = no_save, plot = plot, verbose = verbose ; Control outputs
   compile_opt idl2
@@ -173,7 +173,7 @@ pro LBTI_DRS, date, cfg_file, $ ; Mandatory inputs (date and config file)
   ; ******************************
 
   ; Critical parameters
-  if strlen(date) ne 6 and not keyword_set(data_path) then message, 'Invalid input date: must be composed of 6 digits'
+  if strlen(date) ne 6 and not keyword_set(data_path) then message, 'Invalid input date: must be composed of 6 digits (e.g., "130524" for May 24, 2013)'
   if not keyword_set(data_path) then data_path = pth.root_data + date + pth.sep
   pth.data_path = data_path
 

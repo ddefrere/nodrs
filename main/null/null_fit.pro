@@ -32,8 +32,8 @@ pro NULL_FIT, date, cfg_file, info = info, log_file = log_file, l1type = l1type,
   ; Start actual code
   on_error, 0
   if not keyword_set(info) then info = 1
-  drs_version = 2.0
-  drs_date = '31-JUL-2018'
+  drs_version = 2.1
+  drs_date = '24-MAY-2024'
 
   ; DEFINE GLOBAL VARIABLES
   ; ***********************
