@@ -39,6 +39,10 @@ pro LBTI_UPDATEL0BEAM, date, nod, pos_sx, pos_dx
   datalog_bu = pth.l0Fits_path + date_obs + pth.sep + 'datalog_bu-' + yymmdd + '.sav'
   if not file_test(datalog_bu) then file_copy, datalog, datalog_bu
   utc = data_r[idx_nod].ut_time
+  xcen_sx = data_r[idx_nod].xcen_sx
+  ycen_sx = data_r[idx_nod].ycen_sx
+  xcen_dx = data_r[idx_nod].xcen_dx
+  ycen_dx = data_r[idx_nod].ycen_dx
   data_r[idx_nod].xcen_sx = pos_sx[0]
   data_r[idx_nod].ycen_sx = pos_sx[1]
   data_r[idx_nod].xcen_dx = pos_dx[0]
@@ -71,7 +75,7 @@ pro LBTI_UPDATEL0BEAM, date, nod, pos_sx, pos_dx
   logfile = pth.l0Fits_path + date_obs + pth.sep + 'changelog.txt'
   if not file_test(logfile) then openw, log, logfile, /get_lun, width = 1000 $
   else openw, log, logfile, /get_lun, /append
-  printf, log, systime() + ' ; NOD ' + string(nod, format = '(I0)') + ' (UTC ', utc, ') -- new position : ' + string(pos_sx[0], format = '(I0)') + ',' + string(pos_sx[1], format = '(I0)') + '--' + string(pos_dx[0], format = '(I0)') + ',' + string(pos_dx[1], format = '(I0)')
+  printf, log, systime() + ' ; NOD ' + string(nod, format = '(I0)') + ' (UTC ', utc, ') -- old position : ' + string(xcen_sx, format = '(I0)') + ',' + string(ycen_sx, format = '(I0)') + '--' + string(xcen_dx, format = '(I0)') + ',' + string(ycen_dx, format = '(I0)')' -- new position : ' + string(pos_sx[0], format = '(I0)') + ',' + string(pos_sx[1], format = '(I0)') + '--' + string(pos_dx[0], format = '(I0)') + ',' + string(pos_dx[1], format = '(I0)')
   close, log
   free_lun, log
 end
