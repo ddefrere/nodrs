@@ -51,7 +51,10 @@ pro LBTI_UPDATEL0BEAM, date, nod, pos_sx, pos_dx
   ; --- Save file
   save, data_r, filename = datalog
 
-  ; --- Write DATALOG
+  ; --- Backup and write datalog txt file
+  datalog = pth.l0Fits_path + date_obs + pth.sep + 'datalog.txt'
+  datalog_bu = pth.l0Fits_path + date_obs + pth.sep + 'datalog_bu-' + yymmdd + '.txt'
+  if not file_test(datalog_bu) then file_copy, datalog, datalog_bu
   WRITE_DATALOG, date_obs, instrum = 'NOMIC'
 
   ; --- Now update fits file
