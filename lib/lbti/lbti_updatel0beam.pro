@@ -16,13 +16,13 @@ pro LBTI_UPDATEL0BEAM, date, nod, pos_sx, pos_dx
 
   if not keyword_set(pos_dx) then pos_dx = [0, 0]
 
-  ; -- Declare path
-  DECLARE_PATH, pth, instrum = 'NOMIC'
-  backup_path = pth.l0Fits_path + date + pth.sep + 'backup' + pth.sep
-  if not file_test(backup_path) then file_mkdir, backup_path
-
   ; --- Long-format date
   date_obs = '20' + strmid(date, 0, 2) + '-' + strmid(date, 2, 2) + '-' + strmid(date, 4, 2)
+
+  ; -- Declare path
+  DECLARE_PATH, pth, instrum = 'NOMIC'
+  backup_path = pth.l0Fits_path + date_obs + pth.sep + 'backup' + pth.sep
+  if not file_test(backup_path) then file_mkdir, backup_path
 
   ; --- Restore LO log file and read useful data
   datalog = pth.l0Fits_path + date_obs + pth.sep + 'datalog.sav'
