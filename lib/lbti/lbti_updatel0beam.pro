@@ -16,8 +16,10 @@ pro LBTI_UPDATEL0BEAM, date, nod, pos_sx, pos_dx
 
   if not keyword_set(pos_dx) then pos_dx = [0, 0]
 
-  ; Declare path
+  ; -- Declare path
   DECLARE_PATH, pth, instrum = 'NOMIC'
+  backup_path = pth.l0Fits_path + date + pth.sep + 'backup' + pth.sep
+  if not file_test(backup_path) then file_mkdir, backup_path
 
   ; --- Long-format date
   date_obs = '20' + strmid(date, 0, 2) + '-' + strmid(date, 2, 2) + '-' + strmid(date, 4, 2)
@@ -36,7 +38,7 @@ pro LBTI_UPDATEL0BEAM, date, nod, pos_sx, pos_dx
   ; --- If ok, make a copy
   caldat, julday(), m, d, y, hh, mm, ss
   yymmdd = strcompress(string(y) + string(m, format = '(I2.2)') + string(d, format = '(I2.2)'), /remove_all) ; Concatenate into "YYYYMMDD"
-  datalog_bu = pth.l0Fits_path + date_obs + pth.sep + 'backup' + pth.sep + '/datalog_bu-' + yymmdd + '.sav'
+  datalog_bu = backup_path + 'datalog_bu-' + yymmdd + '.sav'
   if not file_test(datalog_bu) then file_copy, datalog, datalog_bu
   utc = data_r[idx_nod].ut_time
   xcen_sx = data_r[idx_nod].xcen_sx
@@ -53,7 +55,7 @@ pro LBTI_UPDATEL0BEAM, date, nod, pos_sx, pos_dx
 
   ; --- Backup and write datalog txt file
   datalog = pth.l0Fits_path + date_obs + pth.sep + 'datalog.txt'
-  datalog_bu = pth.l0Fits_path + date_obs + pth.sep + 'backup' + pth.sep + 'datalog_bu-' + yymmdd + '.txt'
+  datalog_bu = backup_path + 'datalog_bu-' + yymmdd + '.txt'
   if not file_test(datalog_bu) then file_copy, datalog, datalog_bu
   WRITE_DATALOG, date_obs, instrum = 'NOMIC'
 
