@@ -79,7 +79,7 @@ pro LBTI_UPDATEL0BEAM, date, nod, pos_sx, pos_dx
   ; --- Now print log
   logfile = pth.l0Fits_path + date_obs + pth.sep + 'changelog.txt'
   if not file_test(logfile) then openw, log, logfile, /get_lun, width = 1000 $
-  else openw, log, logfile, /get_lun, /append
+  else openw, log, logfile, /get_lun, /append, width = 1000
   printf, log, systime() + ' ; NOD ' + string(nod, format = '(I0)') + ' (UTC ', utc, ') -- old position : ' + string(xcen_sx, format = '(I0)') + ',' + string(ycen_sx, format = '(I0)') + '-' + string(xcen_dx, format = '(I0)') + ',' + string(ycen_dx, format = '(I0)') + ' -- new position : ' + string(pos_sx[0], format = '(I0)') + ',' + string(pos_sx[1], format = '(I0)') + '-' + string(pos_dx[0], format = '(I0)') + ',' + string(pos_dx[1], format = '(I0)')
   close, log
   free_lun, log
